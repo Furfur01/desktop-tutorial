@@ -1,0 +1,12 @@
+- generic [ref=e2]:
+  - navigation [ref=e3]:
+    - generic [ref=e4]: OpenDesign
+    - generic [ref=e5]:
+      - generic [ref=e6]: Mockups
+      - group [ref=e7]:
+        - generic "▶ atmos20-flow" [ref=e8] [cursor=pointer]
+        - generic [ref=e9] [cursor=pointer]: Windy-style live map
+  - main [ref=e10]:
+    - generic [ref=e11]:
+      - strong [ref=e12]: No file selected
+      - generic [ref=e13]: Pick a file from the sidebar to preview it here.

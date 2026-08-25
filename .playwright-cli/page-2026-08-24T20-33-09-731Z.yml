@@ -1,0 +1,105 @@
+- main [ref=e2]:
+  - generic "Atmos20 global atmospheric map" [ref=e3]
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]: A20
+      - generic [ref=e7]:
+        - strong [ref=e8]: ATMOS / 20
+        - generic [ref=e9]: IDEALIZED EARTH LAB
+    - generic [ref=e10]: MODEL READY
+    - button "模型设置" [ref=e13] [cursor=pointer]
+  - generic [ref=e17]:
+    - generic [ref=e18]: SURFACE ELEVATION
+    - generic [ref=e19]:
+      - generic [ref=e20]: —
+      - generic [ref=e21]: m
+    - generic [ref=e22]:
+      - generic [ref=e23]: 120.0°E
+      - generic [ref=e24]: 30.0°N
+    - generic [ref=e25]:
+      - generic [ref=e26]:
+        - generic [ref=e27]: LEVEL
+        - strong [ref=e28]: 500 hPa
+      - generic [ref=e29]:
+        - generic [ref=e30]: GRID
+        - strong [ref=e31]: 2.5°
+  - navigation "Pressure levels" [ref=e32]:
+    - generic [ref=e33]: PRESSURE
+    - generic [ref=e87]:
+      - button "1000" [ref=e136] [cursor=pointer]
+      - button "850" [ref=e137] [cursor=pointer]
+      - button "700" [ref=e138] [cursor=pointer]
+      - button "500" [ref=e139] [cursor=pointer]
+      - button "300" [ref=e140] [cursor=pointer]
+      - button "200" [ref=e141] [cursor=pointer]
+      - button "100" [ref=e142] [cursor=pointer]
+      - button "50" [ref=e143] [cursor=pointer]
+  - complementary "Map layers" [ref=e34]:
+    - generic [ref=e35]: LAYERS
+    - button "风场 WIND" [ref=e36] [cursor=pointer]:
+      - generic [ref=e38]: 风场
+      - generic [ref=e39]: WIND
+    - button "温度 TEMP" [ref=e40] [cursor=pointer]:
+      - generic [ref=e42]: 温度
+      - generic [ref=e43]: TEMP
+    - button "气压 MSLP" [ref=e44] [cursor=pointer]:
+      - generic [ref=e46]: 气压
+      - generic [ref=e47]: MSLP
+    - button "↓↑ 垂直 OMEGA" [ref=e48] [cursor=pointer]:
+      - generic [ref=e49]: ↓↑
+      - generic [ref=e50]: 垂直
+      - generic [ref=e51]: OMEGA
+    - button "Z 位势 HEIGHT" [ref=e52] [cursor=pointer]:
+      - generic [ref=e53]: Z
+      - generic [ref=e54]: 位势
+      - generic [ref=e55]: HEIGHT
+    - button "地形 RELIEF" [ref=e56] [cursor=pointer]:
+      - generic [ref=e58]: 地形
+      - generic [ref=e59]: RELIEF
+  - generic [ref=e60]:
+    - generic [ref=e61]:
+      - generic [ref=e62]: Surface elevation
+      - generic [ref=e63]: 0.00 — 2846 m
+    - generic [ref=e65]:
+      - generic [ref=e66]: "0.00"
+      - generic [ref=e67]: "1423"
+      - generic [ref=e68]: "2846"
+  - generic [ref=e69]:
+    - button "播放" [ref=e70] [cursor=pointer]
+    - generic [ref=e72]:
+      - generic [ref=e73]: SIMULATION
+      - strong [ref=e74]: DAY 01 · 11:00
+    - generic [ref=e75]:
+      - slider "模拟时间" [ref=e76] [cursor=pointer]: "35"
+      - generic [ref=e77]:
+        - generic [ref=e78]: NOW
+        - generic [ref=e79]: +12H
+        - generic [ref=e80]: +24H
+        - generic [ref=e81]: +36H
+        - generic [ref=e82]: +48H
+    - button "+1 HOUR" [ref=e83] [cursor=pointer]
+  - dialog [ref=e144]:
+    - generic [ref=e145]:
+      - generic [ref=e146]:
+        - generic [ref=e147]:
+          - text: MODEL CONTROL
+          - heading "重新构建网格" [level=2] [ref=e148]
+        - button "×" [active] [ref=e149] [cursor=pointer]
+      - paragraph [ref=e150]: 1°保留最多地形细节，但推进速度明显更慢。2.5°是默认交互模式。
+      - generic [ref=e151]:
+        - generic [ref=e152]:
+          - radio "1° MAXIMUM" [ref=e153]
+          - generic [ref=e154] [cursor=pointer]:
+            - generic [ref=e155]: 1°
+            - generic [ref=e156]: MAXIMUM
+        - generic [ref=e157]:
+          - radio "2.5° BALANCED" [checked] [ref=e158]
+          - generic [ref=e159] [cursor=pointer]:
+            - generic [ref=e160]: 2.5°
+            - generic [ref=e161]: BALANCED
+        - generic [ref=e162]:
+          - radio "5° FAST" [ref=e163]
+          - generic [ref=e164] [cursor=pointer]:
+            - generic [ref=e165]: 5°
+            - generic [ref=e166]: FAST
+      - button "REBUILD MODEL" [ref=e167] [cursor=pointer]

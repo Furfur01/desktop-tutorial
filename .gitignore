@@ -1,9 +1,13 @@
 __pycache__/
 *.py[cod]
+*.egg-info/
 .pytest_cache/
 .venv/
 venv/
 output/*
 !output/.gitkeep
 *.npz
+!src/atmos20/data/*.npz
+data/*.nc
+web/assets/renders/
 .DS_Store

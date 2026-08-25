@@ -13,7 +13,7 @@ from atmos20.render import VARIABLES, plot_state
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run the Atmos20 mechanism model without the web UI.")
     parser.add_argument("--days", type=float, default=5.0)
-    parser.add_argument("--resolution", type=float, choices=[2.5, 5.0], default=5.0)
+    parser.add_argument("--resolution", type=float, choices=[1.0, 2.5, 5.0], default=2.5)
     parser.add_argument("--level", type=int, default=850)
     parser.add_argument("--variable", choices=VARIABLES, default=VARIABLES[0])
     parser.add_argument("--output", type=Path, default=Path("output"))
@@ -23,7 +23,7 @@ def main() -> None:
     config = ModelConfig(
         dlon_deg=args.resolution,
         dlat_deg=args.resolution,
-        dt_seconds=300.0 if args.resolution == 2.5 else 600.0,
+        dt_seconds=120.0 if args.resolution == 1.0 else (300.0 if args.resolution == 2.5 else 600.0),
     )
     model = AtmosphereModel(config)
     model.advance_hours(args.days * 24.0)

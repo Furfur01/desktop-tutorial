@@ -1,0 +1,80 @@
+- main [ref=e2]:
+  - generic "Atmos20 global atmospheric map" [ref=e3]
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]: A20
+      - generic [ref=e7]:
+        - strong [ref=e8]: ATMOS / 20
+        - generic [ref=e9]: IDEALIZED EARTH LAB
+    - generic [ref=e10]: MODEL READY
+    - button "模型设置" [ref=e13] [cursor=pointer]
+  - generic [ref=e17]:
+    - generic [ref=e18]: WIND SPEED
+    - generic [ref=e19]:
+      - generic [ref=e20]: —
+      - generic [ref=e21]: m/s
+    - generic [ref=e22]:
+      - generic [ref=e23]: 120.0°E
+      - generic [ref=e24]: 30.0°N
+    - generic [ref=e25]:
+      - generic [ref=e26]:
+        - generic [ref=e27]: LEVEL
+        - strong [ref=e28]: 850 hPa
+      - generic [ref=e29]:
+        - generic [ref=e30]: GRID
+        - strong [ref=e31]: 2.5°
+  - navigation "Pressure levels" [ref=e32]:
+    - generic [ref=e33]: PRESSURE
+    - generic [ref=e34]:
+      - button "1000" [ref=e35] [cursor=pointer]
+      - button "850" [ref=e36] [cursor=pointer]
+      - button "700" [ref=e37] [cursor=pointer]
+      - button "500" [ref=e38] [cursor=pointer]
+      - button "300" [ref=e39] [cursor=pointer]
+      - button "200" [ref=e40] [cursor=pointer]
+      - button "100" [ref=e41] [cursor=pointer]
+      - button "50" [ref=e42] [cursor=pointer]
+  - complementary "Map layers" [ref=e43]:
+    - generic [ref=e44]: LAYERS
+    - button "风场 WIND" [ref=e45] [cursor=pointer]:
+      - generic [ref=e47]: 风场
+      - generic [ref=e48]: WIND
+    - button "温度 TEMP" [ref=e49] [cursor=pointer]:
+      - generic [ref=e51]: 温度
+      - generic [ref=e52]: TEMP
+    - button "气压 MSLP" [ref=e53] [cursor=pointer]:
+      - generic [ref=e55]: 气压
+      - generic [ref=e56]: MSLP
+    - button "↓↑ 垂直 OMEGA" [ref=e57] [cursor=pointer]:
+      - generic [ref=e58]: ↓↑
+      - generic [ref=e59]: 垂直
+      - generic [ref=e60]: OMEGA
+    - button "Z 位势 HEIGHT" [ref=e61] [cursor=pointer]:
+      - generic [ref=e62]: Z
+      - generic [ref=e63]: 位势
+      - generic [ref=e64]: HEIGHT
+    - button "地形 RELIEF" [ref=e65] [cursor=pointer]:
+      - generic [ref=e67]: 地形
+      - generic [ref=e68]: RELIEF
+  - generic [ref=e69]:
+    - generic [ref=e70]:
+      - generic [ref=e71]: Wind speed
+      - generic [ref=e72]: 0.00 — 4.59 m/s
+    - generic [ref=e74]:
+      - generic [ref=e75]: "0.00"
+      - generic [ref=e76]: "2.30"
+      - generic [ref=e77]: "4.59"
+  - generic [ref=e78]:
+    - button "播放" [ref=e79] [cursor=pointer]
+    - generic [ref=e81]:
+      - generic [ref=e82]: SIMULATION
+      - strong [ref=e83]: DAY 00 · 08:00
+    - generic [ref=e84]:
+      - slider "模拟时间" [ref=e85] [cursor=pointer]: "8"
+      - generic [ref=e86]:
+        - generic [ref=e87]: NOW
+        - generic [ref=e88]: +12H
+        - generic [ref=e89]: +24H
+        - generic [ref=e90]: +36H
+        - generic [ref=e91]: +48H
+    - button "+1 HOUR" [ref=e92] [cursor=pointer]

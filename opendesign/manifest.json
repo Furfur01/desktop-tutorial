@@ -1,0 +1,20 @@
+{
+  "generated": "2026-08-25T17:21:03.4620149+08:00",
+  "sections": [
+    {
+      "id": "mockups",
+      "label": "Mockups",
+      "groups": [
+        {
+          "slug": "atmos20-flow",
+          "files": [
+            {
+              "label": "Atmos20 compute and play map",
+              "path": "mockups/atmos20-flow/index.html"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,65 +1,22 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from importlib.resources import files
 
 import numpy as np
-from matplotlib.path import Path
 
 from .config import ModelConfig
 from .grid import LatLonGrid
 
 
-# Deliberately lightweight coastlines/land polygons. They are coarse enough for
-# the dynamics grid and also double as outlines in the frontend, avoiding a
-# heavy GIS dependency.
-CONTINENT_POLYGONS: dict[str, list[tuple[float, float]]] = {
-    "eurasia": [
-        (-12, 35), (-6, 48), (2, 58), (18, 68), (45, 72), (80, 76),
-        (120, 72), (150, 65), (178, 54), (170, 40), (145, 27), (122, 18),
-        (110, 8), (97, 5), (82, 10), (72, 20), (58, 24), (45, 32),
-        (33, 38), (20, 35), (7, 36), (-12, 35),
-    ],
-    "arabia_india_seasia": [
-        (34, 34), (51, 31), (58, 25), (68, 24), (76, 8), (84, 7),
-        (91, 22), (105, 22), (116, 12), (125, 4), (112, -8), (99, -5),
-        (92, 5), (82, 7), (73, 18), (58, 17), (47, 12), (39, 17), (34, 34),
-    ],
-    "africa": [
-        (-17, 36), (9, 37), (31, 31), (42, 12), (51, 3), (43, -15),
-        (31, -34), (18, -35), (8, -23), (-6, -5), (-17, 14), (-17, 36),
-    ],
-    "north_america": [
-        (-168, 69), (-145, 72), (-120, 73), (-95, 72), (-66, 58),
-        (-55, 47), (-72, 27), (-82, 20), (-97, 15), (-112, 24),
-        (-126, 39), (-151, 56), (-168, 69),
-    ],
-    "central_america": [
-        (-111, 25), (-98, 25), (-88, 18), (-78, 9), (-83, 6),
-        (-92, 14), (-105, 19), (-111, 25),
-    ],
-    "south_america": [
-        (-81, 12), (-67, 13), (-50, 5), (-35, -7), (-43, -23),
-        (-54, -38), (-68, -55), (-76, -42), (-80, -18), (-81, 12),
-    ],
-    "australia": [
-        (112, -11), (132, -10), (153, -24), (146, -39), (126, -36),
-        (113, -25), (112, -11),
-    ],
-    "greenland": [
-        (-73, 59), (-48, 59), (-20, 72), (-34, 83), (-58, 82),
-        (-73, 70), (-73, 59),
-    ],
-    "madagascar": [(43, -12), (50, -13), (51, -25), (46, -27), (43, -12)],
-    "japan": [(129, 31), (143, 31), (146, 44), (137, 46), (129, 31)],
-}
-
-
 @dataclass(slots=True)
 class BoundaryFields:
     land_mask: np.ndarray
+    land_fraction: np.ndarray
     surface_temperature_k: np.ndarray
     surface_elevation_m: np.ndarray
     base_surface_pressure_pa: np.ndarray
+    seasonal_surface_pressure_anomaly_pa: np.ndarray
     terrain_slope_x: np.ndarray
     terrain_slope_y: np.ndarray
     terrain_slope: np.ndarray
@@ -82,26 +39,68 @@ def gaussian(
     return amplitude * np.exp(-0.5 * (dx * dx + dy * dy))
 
 
-def build_land_mask(grid: LatLonGrid) -> np.ndarray:
-    points = np.column_stack(
-        (
-            ((grid.lon2d_deg + 180.0) % 360.0 - 180.0).ravel(),
-            grid.lat2d_deg.ravel(),
-        )
+def _interpolate_real_topography(grid: LatLonGrid) -> tuple[np.ndarray, np.ndarray]:
+    """Load packaged ETOPO 2022 relief and interpolate it to ``grid``.
+
+    The package asset is a 1-degree area aggregate of 0.25-degree samples from
+    the NOAA NCEI ETOPO 2022 ice-surface grid. Keeping this preprocessing out
+    of the runtime makes the interactive model independent of GIS libraries.
+    """
+
+    exact_2p5 = np.isclose(grid.config.dlon_deg, 2.5) and np.isclose(
+        grid.config.dlat_deg, 2.5
     )
-    land = np.zeros(points.shape[0], dtype=bool)
-    for polygon in CONTINENT_POLYGONS.values():
-        land |= Path(np.asarray(polygon, dtype=float)).contains_points(points)
-    return land.reshape(grid.shape)
+    asset_name = "etopo_2022_2p5deg.npz" if exact_2p5 else "etopo_2022_1deg.npz"
+    asset = files("atmos20").joinpath(f"data/{asset_name}")
+    with asset.open("rb") as stream, np.load(stream) as data:
+        source_elevation = data["elevation_m"].astype(float)
+        source_land_fraction = data["land_fraction"].astype(float)
+        source_lat = data["lat_deg"].astype(float)
+        source_lon = data["lon_deg"].astype(float)
+
+    if np.array_equal(grid.lat_deg, source_lat) and np.array_equal(grid.lon_deg, source_lon):
+        return source_land_fraction, source_elevation
+
+    source_spacing = float(source_lon[1] - source_lon[0])
+    lon_position = np.mod(grid.lon_deg, 360.0) / source_spacing
+    x0 = np.floor(lon_position).astype(int) % source_elevation.shape[1]
+    x1 = (x0 + 1) % source_elevation.shape[1]
+    tx = lon_position - np.floor(lon_position)
+
+    lat_position = (
+        np.clip(grid.lat_deg, source_lat[0], source_lat[-1]) - source_lat[0]
+    ) / float(source_lat[1] - source_lat[0])
+    y0 = np.floor(lat_position).astype(int)
+    y1 = np.minimum(y0 + 1, source_elevation.shape[0] - 1)
+    ty = lat_position - y0
+
+    def interpolate(field: np.ndarray) -> np.ndarray:
+        south = (1.0 - tx)[None, :] * field[y0[:, None], x0[None, :]]
+        south += tx[None, :] * field[y0[:, None], x1[None, :]]
+        north = (1.0 - tx)[None, :] * field[y1[:, None], x0[None, :]]
+        north += tx[None, :] * field[y1[:, None], x1[None, :]]
+        return (1.0 - ty)[:, None] * south + ty[:, None] * north
+
+    return interpolate(source_land_fraction), interpolate(source_elevation)
 
 
 def build_boundary(config: ModelConfig, grid: LatLonGrid) -> BoundaryFields:
-    land = build_land_mask(grid)
+    land_fraction, z = _interpolate_real_topography(grid)
+    land = land_fraction >= 0.5
     lat = grid.lat2d_deg
+    season = float(np.clip(config.seasonal_phase, -1.0, 1.0))
+
+    # Preserve the Tibet experiment control on the observed ETOPO relief.
+    # Apply it before the elevation-temperature correction so both boundary
+    # fields describe the same scaled terrain.
+    tibet_weight = gaussian(grid, 87, 32, 18, 9, 1.0)
+    z *= 1.0 + (config.tibet_height_scale - 1.0) * tibet_weight
+    z *= land
+    z = np.clip(z, 0.0, 7000.0)
 
     # Prescribed ocean temperature. The warm belt is shifted north for boreal
     # summer; current anomalies are fixed, as requested.
-    sst_c = np.clip(29.5 - 0.37 * np.abs(lat - 8.0), -1.5, 30.5)
+    sst_c = np.clip(29.5 - 0.37 * np.abs(lat - 8.0 * season), -1.5, 30.5)
     current = config.ocean_current_scale
     sst_c += current * gaussian(grid, 143, 34, 18, 7, +3.3)   # Kuroshio
     sst_c += current * gaussian(grid, 300, 37, 18, 7, +3.1)   # Gulf Stream
@@ -115,35 +114,26 @@ def build_boundary(config: ModelConfig, grid: LatLonGrid) -> BoundaryFields:
     # Land temperature uses the same seasonal latitude curve, then adds
     # continentality and named hot regions. It is a prescribed lower boundary,
     # so the atmosphere cannot cool it in this version.
-    land_c = np.clip(27.0 - 0.43 * np.abs(lat - 24.0), -24.0, 34.0)
+    land_c = np.clip(27.0 - 0.43 * np.abs(lat - 24.0 * season), -24.0, 34.0)
     heat = config.land_heating_scale
-    land_c += heat * gaussian(grid, 25, 23, 28, 11, +10.0)  # Sahara
-    land_c += heat * gaussian(grid, 52, 27, 22, 10, +7.0)   # Arabia/Iran
-    land_c += heat * gaussian(grid, 79, 27, 25, 11, +7.5)   # India/Pakistan
-    land_c += heat * gaussian(grid, 96, 42, 34, 15, +8.0)   # central/east Asia
-    land_c += heat * gaussian(grid, 250, 34, 20, 11, +6.0)  # SW North America
-    land_c += heat * gaussian(grid, 292, -12, 22, 12, +3.0) # Brazil interior
-    land_c += heat * gaussian(grid, 134, -25, 20, 11, +4.0) # Australian interior
+    north_heat = 0.5 * (1.0 + season)
+    south_heat = 0.5 * (1.0 - season)
+    land_c += heat * north_heat * gaussian(grid, 25, 23, 28, 11, +10.0)  # Sahara
+    land_c += heat * north_heat * gaussian(grid, 52, 27, 22, 10, +7.0)   # Arabia/Iran
+    land_c += heat * north_heat * gaussian(grid, 79, 27, 25, 11, +7.5)   # India/Pakistan
+    land_c += heat * north_heat * gaussian(grid, 96, 42, 34, 15, +8.0)   # central/east Asia
+    land_c += heat * north_heat * gaussian(grid, 250, 34, 20, 11, +6.0)  # SW North America
+    land_c += heat * south_heat * gaussian(grid, 292, -12, 22, 12, +6.0) # Brazil interior
+    land_c += heat * south_heat * gaussian(grid, 134, -25, 20, 11, +8.0) # Australian interior
+
+    # Surface air temperature follows terrain height. Without this correction
+    # the ETOPO Tibetan Plateau was assigned nearly 40 °C and produced an
+    # artificial low-level outflow that looked like an East Asian winter
+    # monsoon despite the nominal summer boundary condition.
+    land_c -= config.surface_lapse_rate_k_m * z
 
     surface_c = np.where(land, land_c, sst_c)
     surface_c = np.clip(surface_c, -28.0, 46.0)
-
-    # Idealized topography. Tibet is intentionally broad and high enough to
-    # remove the lower eight-to-nine 50 hPa layers from the local atmosphere.
-    z = np.zeros(grid.shape, dtype=float)
-    tibet = config.tibet_height_scale
-    z += tibet * gaussian(grid, 87, 32, 16, 7.0, 3600.0)
-    z += tibet * gaussian(grid, 92, 34, 11, 6.0, 1800.0)
-    z += tibet * gaussian(grid, 80, 29, 20, 2.7, 1050.0)  # Himalaya ridge
-    z += gaussian(grid, 54, 32, 12, 7, 1450.0)            # Iranian Plateau
-    z += gaussian(grid, 101, 46, 12, 7, 1500.0)           # Altai/Mongolia
-    z += gaussian(grid, 250, 42, 10, 18, 2450.0)          # Rockies
-    z += gaussian(grid, 287, -18, 6.5, 24, 3900.0)        # Andes
-    z += gaussian(grid, 37, 8, 7, 10, 1900.0)             # Ethiopian Highlands
-    z += gaussian(grid, 10, 46, 8, 4, 950.0)              # Alps
-    z += gaussian(grid, 145, -5, 6, 7, 1300.0)            # New Guinea
-    z *= land
-    z = np.clip(z, 0.0, 5800.0)
 
     t_k = surface_c + 273.15
     p0 = 101_325.0
@@ -152,15 +142,38 @@ def build_boundary(config: ModelConfig, grid: LatLonGrid) -> BoundaryFields:
         / (config.gas_constant_dry_air * np.clip(t_k, 235.0, 315.0))
     )
 
+    # A warm continental column must be paired with a thermal surface low.
+    # Starting from zero pressure anomaly leaves only the raised warm-column
+    # thickness gradient, which initially accelerates air out of Asia. This
+    # balanced warm start creates the expected summer inflow within hours
+    # instead of requiring several simulated days of spin-up.
+    zonal_surface_c = np.mean(surface_c, axis=1, keepdims=True)
+    pressure_target = (
+        -config.thermal_low_pressure_pa_per_k
+        * (surface_c - zonal_surface_c)
+        * land_fraction
+    )
+    pressure_target += season * gaussian(grid, 80, 25, 30, 15, -700.0)
+    pressure_target += season * gaussian(grid, 110, 35, 35, 18, -500.0)
+    pressure_target += season * gaussian(grid, 150, 30, 35, 16, +550.0)
+    pressure_target += season * gaussian(grid, 65, -30, 35, 16, +500.0)
+    pressure_target += season * gaussian(grid, 105, 16, 42, 9, -300.0)
+    pressure_mean = np.sum(pressure_target * grid.area_weight) / np.sum(grid.area_weight)
+    pressure_target = np.clip(pressure_target - pressure_mean, -1_600.0, 1_600.0)
+    pressure_mean = np.sum(pressure_target * grid.area_weight) / np.sum(grid.area_weight)
+    pressure_target -= pressure_mean
+
     dzdx = grid.grad_x(z)
     dzdy = grid.grad_y(z)
     slope = np.sqrt(dzdx * dzdx + dzdy * dzdy)
 
     return BoundaryFields(
         land_mask=land,
+        land_fraction=land_fraction,
         surface_temperature_k=t_k,
         surface_elevation_m=z,
         base_surface_pressure_pa=ps,
+        seasonal_surface_pressure_anomaly_pa=pressure_target,
         terrain_slope_x=dzdx,
         terrain_slope_y=dzdy,
         terrain_slope=slope,

@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.figure import Figure
 
-from .boundary import CONTINENT_POLYGONS
 from .model import AtmosphereModel
 
 
@@ -17,20 +16,21 @@ VARIABLES = [
     "Terrain and active layers",
 ]
 
-
-def _polygon_segments(polygon: list[tuple[float, float]]) -> list[tuple[np.ndarray, np.ndarray]]:
-    lon = np.asarray([p[0] % 360.0 for p in polygon], dtype=float)
-    lat = np.asarray([p[1] for p in polygon], dtype=float)
-    jumps = np.where(np.abs(np.diff(lon)) > 180.0)[0]
-    starts = np.r_[0, jumps + 1]
-    ends = np.r_[jumps + 1, lon.size]
-    return [(lon[s:e], lat[s:e]) for s, e in zip(starts, ends) if e - s >= 2]
-
-
-def draw_coastlines(ax: plt.Axes) -> None:
-    for polygon in CONTINENT_POLYGONS.values():
-        for x, y in _polygon_segments(polygon):
-            ax.plot(x, y, color="0.15", linewidth=0.65, zorder=8)
+def draw_coastlines(ax: plt.Axes, model: AtmosphereModel) -> None:
+    lon = np.r_[model.grid.lon_deg, 360.0]
+    land_fraction = np.concatenate(
+        [model.boundary.land_fraction, model.boundary.land_fraction[:, :1]],
+        axis=1,
+    )
+    ax.contour(
+        lon,
+        model.grid.lat_deg,
+        land_fraction,
+        levels=[0.5],
+        colors="0.15",
+        linewidths=0.65,
+        zorder=8,
+    )
 
 
 def _masked_level(model: AtmosphereModel, array: np.ndarray, k: int) -> np.ma.MaskedArray:
@@ -150,7 +150,7 @@ def plot_state(
                 zorder=9,
             )
 
-    draw_coastlines(ax)
+    draw_coastlines(ax, model)
     day = model.time_seconds / 86_400.0
     ax.set_title(f"Atmos20 · {variable} · {p} hPa · day {day:.2f}")
     return fig

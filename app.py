@@ -21,7 +21,15 @@ def _parse_level(value: str | int | float) -> int:
 
 
 def _resolution(value: str) -> float:
+    if value.startswith("1°"):
+        return 1.0
     return 2.5 if value.startswith("2.5") else 5.0
+
+
+def _time_step_seconds(resolution_deg: float) -> float:
+    if resolution_deg <= 1.0:
+        return 120.0
+    return 300.0 if resolution_deg <= 2.5 else 600.0
 
 
 def reset_model(
@@ -36,10 +44,11 @@ def reset_model(
 ):
     global _MODEL
     with _LOCK:
+        resolution_deg = _resolution(resolution)
         config = ModelConfig(
-            dlon_deg=_resolution(resolution),
-            dlat_deg=_resolution(resolution),
-            dt_seconds=300.0 if resolution.startswith("2.5") else 600.0,
+            dlon_deg=resolution_deg,
+            dlat_deg=resolution_deg,
+            dt_seconds=_time_step_seconds(resolution_deg),
             tibet_height_scale=float(tibet_scale),
             land_heating_scale=float(land_heating),
             ocean_current_scale=float(currents),
@@ -92,13 +101,14 @@ def build_app() -> gr.Blocks:
     with gr.Blocks(title="Atmos20") as demo:
         gr.Markdown(
             "# Atmos20：20 层理想化夏季大气\n"
-            "1000–50 hPa，每 50 hPa 一层。地表温度和洋流温度固定；地形会屏蔽地下层、阻挡低层风并产生迎风抬升。"
+            "1000–50 hPa，每 50 hPa 一层。地形来自 ETOPO 2022；默认 2.5°，可切换到较慢的 1°最高分辨率。"
+            "地形会屏蔽地下层、阻挡低层风并产生迎风抬升。"
         )
         with gr.Row():
             with gr.Column(scale=1):
                 resolution = gr.Radio(
-                    ["5° realtime", "2.5° detailed"],
-                    value="5° realtime",
+                    ["1° maximum", "2.5° detailed", "5° realtime"],
+                    value="2.5° detailed",
                     label="水平分辨率",
                 )
                 tibet_scale = gr.Slider(0.0, 1.4, value=1.0, step=0.05, label="青藏高原高度倍率")

@@ -63,7 +63,9 @@ class AtmosphereModel:
         self.u = np.zeros((self.nz, self.ny, self.nx), dtype=np.float64)
         self.v = np.zeros_like(self.u)
         self.temperature_k = self._initial_temperature()
-        self.surface_pressure_anomaly_pa = np.zeros((self.ny, self.nx), dtype=np.float64)
+        self.surface_pressure_anomaly_pa = (
+            self.boundary.seasonal_surface_pressure_anomaly_pa.copy()
+        )
 
         self.time_seconds = 0.0
         self.last_omega_pa_s = np.zeros_like(self.u)
@@ -281,7 +283,9 @@ class AtmosphereModel:
         # Total atmospheric mass is conserved to numerical precision.
         mean_dps = np.sum(dps * self.grid.area_weight) / np.sum(self.grid.area_weight)
         dps -= mean_dps
-        dps -= self.config.mass_damping_rate_s * ps_anom
+        dps -= self.config.mass_damping_rate_s * (
+            ps_anom - self.boundary.seasonal_surface_pressure_anomaly_pa
+        )
         dps += self.config.horizontal_diffusion_rate_s * self.grid.laplacian_index(ps_anom)
         return omega, dps
 

@@ -10,14 +10,14 @@ class ModelConfig:
     """Configuration for the idealized 20-level atmospheric model.
 
     The default vertical grid is 1000, 950, ..., 50 hPa: twenty fixed
-    pressure levels separated by 50 hPa. The default horizontal grid is
-    deliberately coarse enough for an interactive laptop demo.
+    pressure levels separated by 50 hPa. The default 2.5-degree horizontal
+    grid uses area-aggregated ETOPO 2022 relief and remains interactive.
     """
 
-    dlon_deg: float = 5.0
-    dlat_deg: float = 5.0
+    dlon_deg: float = 2.5
+    dlat_deg: float = 2.5
     lat_limit_deg: float = 77.5
-    dt_seconds: float = 600.0
+    dt_seconds: float = 300.0
 
     pressure_bottom_hpa: int = 1000
     pressure_top_hpa: int = 50
@@ -41,6 +41,10 @@ class ModelConfig:
     tibet_height_scale: float = 1.0
     land_heating_scale: float = 1.0
     ocean_current_scale: float = 1.0
+    # +1: boreal summer, 0: equinox, -1: boreal winter.
+    seasonal_phase: float = 1.0
+    surface_lapse_rate_k_m: float = 0.0055
+    thermal_low_pressure_pa_per_k: float = 60.0
 
     random_seed: int = 7
 

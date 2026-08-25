@@ -1,0 +1,104 @@
+{
+  "generated": "2026-08-24T20:51:14.478965+00:00",
+  "source": "Atmos20 1-degree pre-render; Natural Earth 1:110m boundaries",
+  "modelGridDegrees": 1.0,
+  "width": 1280,
+  "height": 640,
+  "frames": 72,
+  "fps": 24,
+  "durationSeconds": 3.0,
+  "levels": [
+    850
+  ],
+  "defaultLevel": 850,
+  "defaultLayer": "wind",
+  "layers": {
+    "wind": {
+      "label": "风速",
+      "english": "WIND",
+      "unit": "m/s",
+      "assets": {
+        "850": "wind_850.webp"
+      },
+      "ranges": {
+        "850": [
+          0.0,
+          35.0
+        ]
+      }
+    },
+    "temperature": {
+      "label": "温度",
+      "english": "TEMPERATURE",
+      "unit": "°C",
+      "assets": {
+        "850": "temperature_850.webp"
+      },
+      "ranges": {
+        "850": [
+          -12.36248464549191,
+          20.870931581520473
+        ]
+      }
+    },
+    "pressure": {
+      "label": "气压",
+      "english": "MSLP ANOMALY",
+      "unit": "hPa",
+      "assets": {
+        "850": "pressure_850.webp"
+      },
+      "ranges": {
+        "850": [
+          -12.0,
+          12.0
+        ]
+      }
+    },
+    "omega": {
+      "label": "垂直运动",
+      "english": "OMEGA",
+      "unit": "Pa/s",
+      "assets": {
+        "850": "omega_850.webp"
+      },
+      "ranges": {
+        "850": [
+          -0.5,
+          0.5
+        ]
+      }
+    },
+    "geopotential": {
+      "label": "位势高度",
+      "english": "GEOPOTENTIAL",
+      "unit": "m",
+      "assets": {
+        "850": "geopotential_850.webp"
+      },
+      "ranges": {
+        "850": [
+          0.0,
+          1553.1625245870212
+        ]
+      }
+    },
+    "terrain": {
+      "label": "真实地形",
+      "english": "RELIEF",
+      "unit": "m",
+      "assets": {
+        "850": "terrain_850.webp"
+      },
+      "ranges": {
+        "850": [
+          0.0,
+          4800.0
+        ]
+      }
+    }
+  },
+  "particles": {
+    "850": "particles_850.webp"
+  }
+}
