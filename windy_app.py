@@ -29,24 +29,41 @@ MAX_RETAINED_JOBS = 5
 
 
 DEFAULT_PAYLOAD: dict[str, object] = {
-    "resolution": 2.5,
-    "level": 850,
-    "region": "east_asia_pacific",
-    "season": "summer",
-    "spinupHours": 3.0,
-    "frames": 72,
-    "fps": 24,
-    "particles": 3600,
+    "scenario": "circulation",
+    "resolution": 5.0,
+    "level": 900,
+    "region": "world",
+    "season": "equinox",
+    "spinupHours": 120.0,
+    "analysisHours": 120.0,
+    "frames": 48,
+    "fps": 12,
+    "particles": 2400,
     "flowSpeed": 1.0,
     "trail": 0.94,
     "tibetScale": 1.0,
     "landHeatingScale": 1.0,
     "oceanCurrentScale": 1.0,
+    "jetStrength": 35.0,
+    "perturbationAmplitude": 1.0,
+    "hemisphere": "north",
+    "equatorToPoleContrastK": 60.0,
+    "surfaceDragDays": 1.0,
+    "seasonalHeatEquatorDeg": 0.0,
 }
 
 
 CONFIG_RESPONSE: dict[str, object] = {
     "parameters": {
+        "scenario": {
+            "label": "实验场景",
+            "type": "select",
+            "options": [
+                {"value": "circulation", "label": "全球地形环流 · HS + ETOPO + 闭合"},
+                {"value": "baroclinic", "label": "干温带气旋 · 动力核验证"},
+            ],
+            "default": DEFAULT_PAYLOAD["scenario"],
+        },
         "resolution": {
             "label": "模型分辨率",
             "type": "select",
@@ -63,17 +80,6 @@ CONFIG_RESPONSE: dict[str, object] = {
             "options": [{"value": level, "label": f"{level} hPa"} for level in PRESSURE_LEVELS],
             "default": DEFAULT_PAYLOAD["level"],
         },
-        "region": {
-            "label": "地图范围",
-            "type": "select",
-            "options": [
-                {"value": "east_asia_pacific", "label": "东亚与西太平洋"},
-                {"value": "asia", "label": "亚洲"},
-                {"value": "world", "label": "全球"},
-            ],
-            "acceptedAliases": {"east_asia": "east_asia_pacific", "global": "world"},
-            "default": DEFAULT_PAYLOAD["region"],
-        },
         "season": {
             "label": "季节",
             "type": "select",
@@ -84,27 +90,42 @@ CONFIG_RESPONSE: dict[str, object] = {
             ],
             "default": DEFAULT_PAYLOAD["season"],
         },
-        "spinupHours": {"label": "模式积分", "type": "number", "min": 0.0, "max": 12.0, "step": 0.5, "unit": "h", "default": 3.0},
-        "frames": {"label": "动画帧数", "type": "integer", "min": 24, "max": 120, "step": 1, "default": 72},
-        "fps": {"label": "播放帧率", "type": "integer", "min": 12, "max": 30, "step": 1, "unit": "fps", "default": 24},
-        "particles": {"label": "粒子数量", "type": "integer", "min": 800, "max": 6000, "step": 100, "default": 3600},
+        "spinupHours": {"label": "环流建立期", "type": "number", "min": 48.0, "max": 720.0, "step": 24.0, "unit": "h", "default": DEFAULT_PAYLOAD["spinupHours"]},
+        "analysisHours": {"label": "播放分析窗", "type": "number", "min": 24.0, "max": 720.0, "step": 24.0, "unit": "h", "default": DEFAULT_PAYLOAD["analysisHours"]},
+        "frames": {"label": "动画帧数", "type": "integer", "min": 24, "max": 120, "step": 1, "default": DEFAULT_PAYLOAD["frames"]},
+        "fps": {"label": "播放帧率", "type": "integer", "min": 12, "max": 30, "step": 1, "unit": "fps", "default": DEFAULT_PAYLOAD["fps"]},
+        "particles": {"label": "粒子数量", "type": "integer", "min": 800, "max": 6000, "step": 100, "default": DEFAULT_PAYLOAD["particles"]},
         "flowSpeed": {"label": "流线速度", "type": "number", "min": 0.25, "max": 3.0, "step": 0.05, "default": 1.0},
         "trail": {"label": "尾迹长度", "type": "number", "min": 0.75, "max": 0.985, "step": 0.005, "default": 0.94},
         "tibetScale": {"label": "青藏高原高度", "type": "number", "min": 0.0, "max": 2.0, "step": 0.05, "default": 1.0},
         "landHeatingScale": {"label": "陆地增温", "type": "number", "min": 0.0, "max": 2.0, "step": 0.05, "default": 1.0},
         "oceanCurrentScale": {"label": "洋流温度异常", "type": "number", "min": 0.0, "max": 2.0, "step": 0.05, "default": 1.0},
+        "equatorToPoleContrastK": {"label": "赤道—极地温差", "type": "number", "min": 30.0, "max": 90.0, "step": 2.0, "unit": "K", "default": 60.0},
+        "surfaceDragDays": {"label": "近地面摩擦时间", "type": "number", "min": 0.25, "max": 4.0, "step": 0.25, "unit": "d", "default": 1.0},
+        "seasonalHeatEquatorDeg": {"label": "热赤道纬度", "type": "number", "min": -23.5, "max": 23.5, "step": 0.5, "unit": "°", "default": 0.0},
+        "jetStrength": {"label": "急流峰值", "type": "number", "min": 25.0, "max": 45.0, "step": 1.0, "unit": "m/s", "default": 35.0},
+        "perturbationAmplitude": {"label": "触发扰动", "type": "number", "min": 0.0, "max": 2.0, "step": 0.1, "unit": "m/s", "default": 1.0},
+        "hemisphere": {
+            "label": "发展半球",
+            "type": "select",
+            "options": [
+                {"value": "north", "label": "北半球"},
+                {"value": "south", "label": "南半球"},
+            ],
+            "default": "north",
+        },
     },
     "presets": [
         {
             "id": "preview",
-            "label": "快速预览",
-            "settings": {**DEFAULT_PAYLOAD, "resolution": 5.0, "spinupHours": 0.5, "frames": 36, "fps": 18, "particles": 1400},
+            "label": "快速三圈",
+            "settings": {**DEFAULT_PAYLOAD, "resolution": 5.0, "spinupHours": 72.0, "analysisHours": 72.0, "frames": 30, "fps": 12, "particles": 1600},
         },
-        {"id": "balanced", "label": "平衡", "settings": dict(DEFAULT_PAYLOAD)},
+        {"id": "balanced", "label": "标准三圈", "settings": dict(DEFAULT_PAYLOAD)},
         {
             "id": "quality",
-            "label": "高质量",
-            "settings": {**DEFAULT_PAYLOAD, "resolution": 1.0, "spinupHours": 6.0, "frames": 120, "particles": 5000},
+            "label": "2.5°三圈",
+            "settings": {**DEFAULT_PAYLOAD, "resolution": 2.5, "spinupHours": 168.0, "analysisHours": 168.0, "frames": 60, "fps": 12, "particles": 3600},
         },
     ],
     "limits": {
@@ -114,11 +135,11 @@ CONFIG_RESPONSE: dict[str, object] = {
         "particleFrameBudget": 750_000,
     },
     "estimateSecondsByResolution": {
-        "1": 180,
-        "2.5": 50,
-        "5": 15,
+        "1": 24_000,
+        "2.5": 3_000,
+        "5": 360,
     },
-    "estimateNote": "按平衡预设估算；实际时间取决于 CPU、帧数、积分时长和粒子数量。",
+    "estimateNote": "按5天环流建立和5天连续分析窗估算；1°全球环流需要数小时，建议先用5°。",
 }
 
 
@@ -167,22 +188,31 @@ def validate_render_payload(raw_payload: object):
         raise ValidationError(f"不支持的参数：{', '.join(unknown)}")
     payload = {**DEFAULT_PAYLOAD, **raw_payload}
 
+    scenario = payload["scenario"]
+    if not isinstance(scenario, str) or scenario not in {"baroclinic", "circulation"}:
+        raise ValidationError("scenario 仅支持 baroclinic 或 circulation")
+
     resolution = _number(payload, "resolution", 1.0, 5.0)
     if resolution not in {1.0, 2.5, 5.0}:
         raise ValidationError("resolution 仅支持 1、2.5 或 5")
     level = _integer(payload, "level", 50, 1000)
     if level not in PRESSURE_LEVELS:
         raise ValidationError("level 必须是 50 hPa 间隔的标准气压层")
+    if scenario == "baroclinic" and level > 900:
+        raise ValidationError("干温带气旋实验仅支持 900–50 hPa；建议查看 850 hPa 锋面")
     region = payload["region"]
     if not isinstance(region, str):
         raise ValidationError("region 必须是字符串")
-    region_aliases = {"east_asia": "east_asia_pacific", "global": "world"}
-    region = region_aliases.get(region, region)
-    if region not in {"east_asia_pacific", "asia", "world"}:
-        raise ValidationError("region 仅支持 east_asia_pacific、asia 或 world")
+    legacy_regions = {"east_asia", "east_asia_pacific", "asia", "global", "world"}
+    if region not in legacy_regions:
+        raise ValidationError("region 仅支持 world；旧版地图范围会自动归一化为 world")
+    region = "world"
     season = payload["season"]
     if not isinstance(season, str) or season not in {"summer", "equinox", "winter"}:
         raise ValidationError("season 仅支持 summer、equinox 或 winter")
+    hemisphere = payload["hemisphere"]
+    if not isinstance(hemisphere, str) or hemisphere not in {"north", "south"}:
+        raise ValidationError("hemisphere 仅支持 north 或 south")
 
     frames = _integer(payload, "frames", 24, 120)
     fps = _integer(payload, "fps", 12, 30)
@@ -194,12 +224,22 @@ def validate_render_payload(raw_payload: object):
 
     from scripts.prerender_windy import RenderSettings
 
+    spinup_hours = _number(payload, "spinupHours", 0.0, 720.0)
+    if scenario == "baroclinic" and not 72.0 <= spinup_hours <= 240.0:
+        raise ValidationError("干温带气旋实验需要积分 72–240 小时")
+    if scenario == "circulation" and not 48.0 <= spinup_hours <= 720.0:
+        raise ValidationError("全球三圈环流需要 2–30 天建立期")
+
+    analysis_hours = _number(payload, "analysisHours", 24.0, 720.0)
+
     return RenderSettings(
+        scenario=scenario,
         resolution=resolution,
         level=level,
         region=region,
         season=season,
-        spinup_hours=_number(payload, "spinupHours", 0.0, 12.0),
+        spinup_hours=spinup_hours,
+        analysis_hours=analysis_hours,
         frames=frames,
         fps=fps,
         particles=particles,
@@ -208,17 +248,25 @@ def validate_render_payload(raw_payload: object):
         tibet_scale=_number(payload, "tibetScale", 0.0, 2.0),
         land_heating_scale=_number(payload, "landHeatingScale", 0.0, 2.0),
         ocean_current_scale=_number(payload, "oceanCurrentScale", 0.0, 2.0),
+        jet_strength=_number(payload, "jetStrength", 25.0, 45.0),
+        perturbation_amplitude=_number(payload, "perturbationAmplitude", 0.0, 2.0),
+        hemisphere=hemisphere,
+        equator_to_pole_contrast_k=_number(payload, "equatorToPoleContrastK", 30.0, 90.0),
+        surface_drag_days=_number(payload, "surfaceDragDays", 0.25, 4.0),
+        seasonal_heat_equator_deg=_number(payload, "seasonalHeatEquatorDeg", -23.5, 23.5),
     )
 
 
 def _public_settings(settings: object) -> dict[str, object]:
     values = asdict(settings)
     return {
+        "scenario": values["scenario"],
         "resolution": values["resolution"],
         "level": values["level"],
         "region": values["region"],
         "season": values["season"],
         "spinupHours": values["spinup_hours"],
+        "analysisHours": values["analysis_hours"],
         "frames": values["frames"],
         "fps": values["fps"],
         "particles": values["particles"],
@@ -227,6 +275,12 @@ def _public_settings(settings: object) -> dict[str, object]:
         "tibetScale": values["tibet_scale"],
         "landHeatingScale": values["land_heating_scale"],
         "oceanCurrentScale": values["ocean_current_scale"],
+        "jetStrength": values["jet_strength"],
+        "perturbationAmplitude": values["perturbation_amplitude"],
+        "hemisphere": values["hemisphere"],
+        "equatorToPoleContrastK": values["equator_to_pole_contrast_k"],
+        "surfaceDragDays": values["surface_drag_days"],
+        "seasonalHeatEquatorDeg": values["seasonal_heat_equator_deg"],
     }
 
 
@@ -337,12 +391,26 @@ class RenderJobManager:
             self._update(job_id, progress=float(progress), stage=stage, message=message)
 
         try:
-            render_assets(
+            manifest = render_assets(
                 settings,
                 output,
                 asset_base=f"/assets/renders/{job_id}/",
                 progress=report,
             )
+            if (
+                getattr(settings, "scenario", None) == "circulation"
+                and manifest.get("qualityGatePassed") is not True
+            ):
+                self._safe_remove(output)
+                self._update(
+                    job_id,
+                    status="error",
+                    progress=1.0,
+                    stage="error",
+                    message="计算完成，但五风带或高波数数值门禁未通过；结果未发布",
+                )
+                self._prune()
+                return
             manifest_url = f"/assets/renders/{job_id}/manifest.json"
             self._update(
                 job_id,
@@ -416,7 +484,12 @@ class AtmosMapHandler(SimpleHTTPRequestHandler):
 
     def end_headers(self) -> None:
         path = urlsplit(self.path).path
-        if path.endswith("manifest.json") or path.endswith((".css", ".js")):
+        if (
+            path in {"", "/"}
+            or path.endswith(".html")
+            or path.endswith("manifest.json")
+            or path.endswith((".css", ".js"))
+        ):
             self.send_header("Cache-Control", "no-store")
         elif path.endswith(".webp"):
             self.send_header("Cache-Control", "public, max-age=3600")

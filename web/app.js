@@ -1,7 +1,20 @@
 const INITIAL_MANIFEST_URL = "/assets/prerender/manifest.json";
-const SETTINGS_KEY = "atmos20-render-settings-v1";
-const ACTIVE_JOB_KEY = "atmos20-active-render-job-v1";
-const LAST_MANIFEST_KEY = "atmos20-last-render-manifest-v2";
+const SETTINGS_KEY = "atmos20-render-settings-v3";
+const ACTIVE_JOB_KEY = "atmos20-active-render-job-v2";
+const LAST_MANIFEST_KEY = "atmos20-last-render-manifest-v5";
+const LAYER_KEY = "atmos20-prerender-layer-v3";
+const LEVEL_KEY = "atmos20-prerender-level-v2";
+const UI_DEFAULTS = {
+  scenario: "circulation",
+  spinupHours: 120,
+  analysisHours: 120,
+  equatorToPoleContrastK: 60,
+  surfaceDragDays: 1,
+  seasonalHeatEquatorDeg: 0,
+  tibetScale: 1,
+  landHeatingScale: 1,
+  oceanCurrentScale: 1,
+};
 const palettes = {
   wind: ["#3d50a3", "#3374b5", "#269ba9", "#36b875", "#8dcc55", "#e2d653", "#e5974e", "#b64173"],
   temperature: ["#4545a5", "#347cc2", "#42b7b1", "#c3d779", "#f4c85f", "#e87545", "#b93455"],
@@ -9,13 +22,17 @@ const palettes = {
   omega: ["#67339b", "#397dcc", "#47c4c2", "#d6d6b1", "#e99952", "#bc3f62"],
   geopotential: ["#343d82", "#3769a6", "#399a9d", "#75b567", "#c7c65b", "#d48b54"],
   terrain: ["#284f85", "#367d75", "#66a762", "#aabb69", "#b9915e", "#8a684f", "#e1ddd0"],
+  fronts: ["#38439b", "#3478bc", "#47b5b0", "#d4d684", "#efb34e", "#cf5262"],
+  zonalWind: ["#42379a", "#3169bd", "#35a2c1", "#d9e1d9", "#e5b95a", "#df7049", "#a93255"],
 };
 
 const postFields = [
-  "resolution", "level", "region", "season", "spinupHours", "frames", "fps", "particles",
-  "flowSpeed", "trail", "tibetScale", "landHeatingScale", "oceanCurrentScale",
+  "scenario", "resolution", "level", "season", "spinupHours", "analysisHours", "frames", "fps", "particles",
+  "flowSpeed", "trail", "equatorToPoleContrastK", "surfaceDragDays", "seasonalHeatEquatorDeg",
+  "tibetScale", "landHeatingScale", "oceanCurrentScale",
+  "jetStrength", "perturbationAmplitude", "hemisphere",
 ];
-const numericFields = new Set(postFields.filter((name) => !["region", "season"].includes(name)));
+const numericFields = new Set(postFields.filter((name) => !["scenario", "season", "hemisphere"].includes(name)));
 const persistedFields = [...postFields, "flowOpacity", "fieldOpacity"];
 const stageOrder = ["queued", "model", "particles", "layers", "encode"];
 const stageAliases = {
@@ -46,19 +63,20 @@ const stageLabels = {
 
 const map = document.querySelector(".weather-map");
 const form = document.querySelector("#renderForm");
+const globeCanvas = document.querySelector("#globeCanvas");
 const fieldImage = document.querySelector("#fieldImage");
 const flowImage = document.querySelector("#flowImage");
-const flowFreeze = document.querySelector("#flowFreeze");
 const loader = document.querySelector("#assetLoader");
 const renderButton = document.querySelector("#renderButton");
+let globeRenderer = null;
 
 const state = {
   config: null,
   manifest: null,
   manifestUrl: INITIAL_MANIFEST_URL,
-  layer: localStorage.getItem("atmos20-prerender-layer") || "wind",
-  level: Number(localStorage.getItem("atmos20-prerender-level") || 850),
-  playing: true,
+  layer: localStorage.getItem(LAYER_KEY) || "zonalWind",
+  level: Number(localStorage.getItem(LEVEL_KEY) || 900),
+  playing: !window.matchMedia("(prefers-reduced-motion: reduce)").matches,
   rendering: false,
   jobId: null,
   statusUrl: null,
@@ -67,6 +85,17 @@ const state = {
   assetSwap: 0,
   presets: [],
 };
+
+try {
+  globeRenderer = new window.AtmosGlobeRenderer(globeCanvas, {
+    mapElement: map,
+    fallbackElement: document.querySelector("#globeFallback"),
+  });
+} catch (error) {
+  document.querySelector(".map-media")?.classList.add("globe-fallback-mode");
+  document.querySelector("#globeFallback").hidden = false;
+  console.error("Globe renderer initialization failed.", error);
+}
 
 function readSettings() {
   try {
@@ -94,9 +123,8 @@ function saveSettings() {
 
 function restoreSettings() {
   const saved = readSettings();
-  // Select options are supplied by /api/config. Applying saved select values
-  // before those options exist can erase a valid 5°/region choice, so values
-  // are restored later in applyConfig().
+  // Select options are supplied by /api/config, so saved values are restored
+  // later in applyConfig().
   if (Array.isArray(saved.openSections)) {
     document.querySelectorAll(".parameter-group").forEach((section) => {
       section.open = saved.openSections.includes(section.dataset.section);
@@ -109,6 +137,8 @@ function restoreSettings() {
 function setDrawer(open, persist = true) {
   map.classList.toggle("drawer-open", open);
   document.querySelector("#drawerToggle").setAttribute("aria-expanded", String(open));
+  globeRenderer?.resize();
+  window.setTimeout(() => globeRenderer?.resize(), 300);
   if (persist) saveSettings();
 }
 
@@ -127,17 +157,60 @@ function setLoading(visible) {
 
 function formatOutput(name, value) {
   const numeric = Number(value);
-  if (name === "spinupHours") return `${Number.isInteger(numeric) ? numeric.toFixed(0) : numeric.toFixed(1)} h`;
+  if (name === "spinupHours" || name === "analysisHours") {
+    const days = numeric / 24;
+    return `${days.toFixed(Number.isInteger(days) ? 0 : 1)} d`;
+  }
+  if (name === "jetStrength") return `${numeric.toFixed(0)} m/s`;
+  if (name === "perturbationAmplitude") return `${numeric.toFixed(1)} m/s`;
+  if (name === "equatorToPoleContrastK") return `${numeric.toFixed(0)} K`;
+  if (name === "surfaceDragDays") return `${numeric.toFixed(2)} d`;
+  if (name === "seasonalHeatEquatorDeg") {
+    if (numeric === 0) return "0°";
+    return `${Math.abs(numeric).toFixed(0)}°${numeric > 0 ? "N" : "S"}`;
+  }
   if (name === "trail" || name === "flowOpacity" || name === "fieldOpacity") return `${Math.round(numeric * 100)}%`;
   return `${numeric.toFixed(2)}×`;
 }
 
+function applyScenarioControls() {
+  const baroclinic = form.elements.scenario?.value === "baroclinic";
+  document.querySelectorAll("[data-baroclinic-only]").forEach((element) => {
+    element.classList.toggle("scenario-hidden", !baroclinic);
+  });
+  document.querySelectorAll("[data-circulation-only]").forEach((element) => {
+    element.classList.toggle("scenario-hidden", baroclinic);
+  });
+  const levelSelect = form.elements.level;
+  if (levelSelect) {
+    Array.from(levelSelect.options).forEach((option) => {
+      option.disabled = baroclinic && Number(option.value) > 900;
+    });
+    if (baroclinic && Number(levelSelect.value) > 900) levelSelect.value = "850";
+  }
+  const duration = form.elements.spinupHours;
+  if (duration) {
+    duration.min = baroclinic ? "72" : "48";
+    duration.max = baroclinic ? "240" : "720";
+    duration.step = baroclinic ? "6" : "24";
+    const numeric = Number(duration.value);
+    if (baroclinic && (numeric < 72 || numeric > 240)) duration.value = "240";
+    if (!baroclinic && (numeric < 48 || numeric > 720)) duration.value = "120";
+  }
+  const spinupLabel = document.querySelector("#spinupLabel");
+  if (spinupLabel) spinupLabel.textContent = baroclinic ? "生命周期积分" : "环流建立期";
+  const physicsSummary = document.querySelector("#physicsSummary");
+  if (physicsSummary) physicsSummary.textContent = baroclinic ? "斜压波验证" : "HS + ETOPO + 三圈闭合";
+}
+
 function refreshFormReadout() {
+  applyScenarioControls();
   document.querySelectorAll("[data-output]").forEach((output) => {
     const control = form.elements.namedItem(output.dataset.output);
     if (control) output.value = formatOutput(output.dataset.output, control.value);
   });
-  const seasonLabel = form.elements.season?.selectedOptions?.[0]?.textContent || "";
+  const baroclinic = form.elements.scenario?.value === "baroclinic";
+  const seasonLabel = baroclinic ? "斜压波验证" : "HS + 地形环流";
   document.querySelector("#modelSummary").textContent =
     `${form.elements.resolution.value}° · ${form.elements.level.value} hPa · ${seasonLabel}`;
   document.querySelector("#animationSummary").textContent =
@@ -149,9 +222,9 @@ function refreshFormReadout() {
 function applyDisplaySettings() {
   const flowOpacity = Number(form.elements.flowOpacity.value);
   const fieldOpacity = Number(form.elements.fieldOpacity.value);
-  flowImage.style.opacity = String(flowOpacity);
-  flowFreeze.style.opacity = String(flowOpacity);
-  fieldImage.style.opacity = String(fieldOpacity);
+  document.querySelector(".map-media").style.setProperty("--field-opacity", String(fieldOpacity));
+  document.querySelector(".map-media").style.setProperty("--flow-opacity", String(flowOpacity));
+  globeRenderer?.setOpacity(fieldOpacity, flowOpacity);
 }
 
 function calculateEstimateSeconds() {
@@ -159,13 +232,18 @@ function calculateEstimateSeconds() {
   const frames = Number(form.elements.frames.value);
   const particles = Number(form.elements.particles.value);
   const spinupHours = Number(form.elements.spinupHours.value);
-  const regionFactor = form.elements.region.value === "world" ? 1.65 : 1;
-  const defaultsByResolution = resolution <= 1 ? 100 : resolution <= 2.5 ? 6 : 1;
+  const analysisHours = Number(form.elements.analysisHours.value);
+  const scenario = form.elements.scenario?.value || "circulation";
+  const defaultsByResolution = scenario === "baroclinic"
+    ? (resolution <= 1 ? 18000 : resolution <= 2.5 ? 2400 : 300)
+    : (resolution <= 1 ? 24000 : resolution <= 2.5 ? 3000 : 360);
   const configured = state.config?.estimate?.secondsAtDefaults || state.config?.estimateSecondsByResolution || {};
   const configuredBase = Number(configured[String(resolution)] ?? defaultsByResolution);
-  const spinupFactor = 0.4 + 0.6 * Math.max(spinupHours, 0) / 3;
+  const referenceHours = scenario === "baroclinic" ? 240 : 240;
+  const experimentHours = scenario === "baroclinic" ? spinupHours : spinupHours + analysisHours;
+  const spinupFactor = 0.35 + 0.65 * Math.max(experimentHours, 0) / referenceHours;
   const mediaFactor = 0.45 + 0.55 * (frames / 72) * (particles / 3600);
-  return Math.max(1, configuredBase * regionFactor * (0.55 * spinupFactor + 0.45 * mediaFactor));
+  return Math.max(1, configuredBase * (0.72 * spinupFactor + 0.28 * mediaFactor));
 }
 
 function durationLabel(seconds) {
@@ -207,6 +285,20 @@ function validateForm(showMessage = true) {
     if (showMessage) message.textContent = "当前帧数与粒子数组合过大，请降低其中一项。";
     return false;
   }
+  const hours = Number(form.elements.spinupHours.value);
+  if (form.elements.scenario.value === "baroclinic" && (hours < 72 || hours > 240)) {
+    if (showMessage) message.textContent = "干温带气旋需要积分 3–10 天。";
+    return false;
+  }
+  if (form.elements.scenario.value === "circulation" && (hours < 48 || hours > 720)) {
+    if (showMessage) message.textContent = "三圈环流建立期需设置为 2–30 天。";
+    return false;
+  }
+  const analysisHours = Number(form.elements.analysisHours.value);
+  if (form.elements.scenario.value === "circulation" && (analysisHours < 24 || analysisHours > 720)) {
+    if (showMessage) message.textContent = "分析 / 播放时段需设置为 1–30 天。";
+    return false;
+  }
   message.textContent = "";
   return true;
 }
@@ -229,6 +321,23 @@ function renderLevelLabel() {
   document.querySelector(".fixed-level strong").textContent = `${state.level} hPa`;
 }
 
+function updateTimelineReadout(frameIndex = 0) {
+  if (!state.manifest) return;
+  const timeline = Array.isArray(state.manifest.timeline) ? state.manifest.timeline : [];
+  const entry = timeline[Math.max(0, Math.min(timeline.length - 1, Number(frameIndex) || 0))];
+  if (!entry) {
+    document.querySelector("#loopLabel").textContent = `${Number(state.manifest.durationSeconds || state.manifest.frames / state.manifest.fps).toFixed(1)} s loop`;
+    document.querySelector("#mediaNote").textContent = `${state.manifest.frames} FRAMES · READY`;
+    return;
+  }
+  const forecastHour = Number(entry.forecastHour || 0);
+  const day = forecastHour / 24;
+  document.querySelector("#loopLabel").textContent = `D+${day.toFixed(day < 1 ? 2 : 1)} · ${forecastHour.toFixed(0)} h`;
+  const pressure = Number(entry.surfacePressureMinHpa);
+  const pressureLabel = Number.isFinite(pressure) ? ` · ${pressure.toFixed(0)} hPa` : "";
+  document.querySelector("#mediaNote").textContent = `${Number(frameIndex) + 1}/${state.manifest.frames}${pressureLabel}`;
+}
+
 function updateMapText() {
   if (!state.manifest) return;
   const layer = state.manifest.layers[state.layer];
@@ -237,27 +346,32 @@ function updateMapText() {
   document.querySelector("#layerEnglish").textContent = layer.english;
   document.querySelector("#layerName").textContent = layer.label;
   document.querySelector("#levelLabel").textContent = `${state.level} hPa`;
-  document.querySelector("#loopLabel").textContent = `${Number(state.manifest.durationSeconds || state.manifest.frames / state.manifest.fps).toFixed(1)} s loop`;
   document.querySelector("#legendName").textContent = layer.english;
   document.querySelector("#legendUnit").textContent = layer.unit;
   document.querySelector("#legendMin").textContent = numberLabel(range[0]);
-  document.querySelector("#legendMid").textContent = numberLabel((Number(range[0]) + Number(range[1])) / 2);
+  document.querySelector("#legendMid").textContent = state.layer === "zonalWind"
+    ? "0"
+    : numberLabel((Number(range[0]) + Number(range[1])) / 2);
   document.querySelector("#legendMax").textContent = numberLabel(range[1]);
   document.querySelector("#legendBar").style.background = `linear-gradient(90deg,${(palettes[state.layer] || palettes.wind).join(",")})`;
-  document.querySelector("#mediaNote").textContent = `${state.manifest.frames} FRAMES · READY`;
   if (!state.rendering) document.querySelector("#renderStatus").textContent = `READY · ${state.manifest.fps} FPS`;
-  const viewportKey = state.manifest.viewport?.key || state.manifest.viewport?.name || state.manifest.region?.key || state.manifest.region;
-  const viewportLabels = { east_asia_pacific: "EAST ASIA / PACIFIC", east_asia: "EAST ASIA / PACIFIC", asia: "ASIA", world: "WORLD", global: "WORLD" };
-  document.querySelector("#regionLabel").textContent =
-    state.manifest.regionLabel || state.manifest.region?.label || viewportLabels[viewportKey] || "EAST ASIA / PACIFIC";
+  document.querySelector("#regionLabel").textContent = "WORLD · ORTHOGRAPHIC";
+  const frontLegend = document.querySelector("#frontLegend");
+  if (frontLegend) {
+    frontLegend.hidden = !state.manifest.frontLegend
+      || !["fronts", "wind", "temperature", "pressure"].includes(state.layer);
+  }
+  const zonalLegend = document.querySelector("#zonalLegend");
+  if (zonalLegend) zonalLegend.hidden = state.layer !== "zonalWind";
   document.querySelectorAll(".layer").forEach((button) => {
     const available = Boolean(state.manifest.layers[button.dataset.layer]);
     button.disabled = !available;
     button.classList.toggle("active", button.dataset.layer === state.layer);
   });
-  localStorage.setItem("atmos20-prerender-layer", state.layer);
-  localStorage.setItem("atmos20-prerender-level", String(state.level));
+  localStorage.setItem(LAYER_KEY, state.layer);
+  localStorage.setItem(LEVEL_KEY, String(state.level));
   renderLevelLabel();
+  updateTimelineReadout(Number(globeCanvas.dataset.frame || 0));
 }
 
 function loadImage(element, source) {
@@ -271,27 +385,10 @@ function loadImage(element, source) {
   });
 }
 
-function freezeCurrentFrame() {
-  if (!flowImage.naturalWidth || !flowImage.naturalHeight) return false;
-  flowFreeze.width = flowImage.naturalWidth;
-  flowFreeze.height = flowImage.naturalHeight;
-  const context = flowFreeze.getContext("2d");
-  context.clearRect(0, 0, flowFreeze.width, flowFreeze.height);
-  context.drawImage(flowImage, 0, 0, flowFreeze.width, flowFreeze.height);
-  flowFreeze.classList.add("visible");
-  flowImage.classList.add("paused");
-  return true;
-}
-
 function setPlaying(playing) {
   state.playing = playing;
   const playButton = document.querySelector("#playButton");
-  if (playing) {
-    flowFreeze.classList.remove("visible");
-    flowImage.classList.remove("paused");
-  } else if (!freezeCurrentFrame()) {
-    flowImage.classList.add("paused");
-  }
+  globeRenderer?.setPlaying(playing);
   playButton.classList.toggle("paused", !playing);
   playButton.setAttribute("aria-label", playing ? "暂停动画" : "播放动画");
 }
@@ -305,12 +402,19 @@ async function swapAssets(changeFlow) {
   if (!fieldSource || (changeFlow && !flowSource)) throw new Error("清单缺少当前层级的播放素材");
   const swap = ++state.assetSwap;
   setLoading(true);
-  fieldImage.style.opacity = String(Number(form.elements.fieldOpacity.value) * 0.45);
   try {
     const loads = [loadImage(fieldImage, fieldSource)];
     if (changeFlow) loads.push(loadImage(flowImage, flowSource));
     await Promise.all(loads);
     if (swap !== state.assetSwap) return;
+    const timelineFrame = changeFlow ? 0 : Number(globeCanvas.dataset.frame || 0);
+    await globeRenderer?.setSources(
+      fieldImage,
+      flowImage,
+      fieldImage.currentSrc || fieldImage.src,
+      flowImage.currentSrc || flowImage.src,
+      { timelineFrame },
+    );
     applyDisplaySettings();
     setPlaying(state.playing);
     updateMapText();
@@ -332,13 +436,38 @@ function prefetchAssets() {
   });
 }
 
+function isWorldManifest(manifest) {
+  const viewport = manifest.viewport || {};
+  const lonMin = Number(viewport.lon_min ?? viewport.lonMin);
+  let lonMax = Number(viewport.lon_max ?? viewport.lonMax);
+  if (Number.isFinite(lonMin) && Number.isFinite(lonMax) && lonMax <= lonMin) lonMax += 360;
+  const lonSpan = lonMax - lonMin;
+  const regionValues = [
+    viewport.key,
+    viewport.name,
+    manifest.settings?.region,
+    typeof manifest.region === "string" ? manifest.region : manifest.region?.key,
+  ].filter(Boolean).map((value) => String(value).toLowerCase());
+  return lonSpan >= 359.5 || regionValues.some((value) => ["world", "global"].includes(value));
+}
+
 async function activateManifest(manifestUrl, autoPlay = false) {
   const response = await fetch(manifestUrl, { cache: "no-store" });
   if (!response.ok) throw new Error(`清单请求失败（HTTP ${response.status}）`);
   const manifest = await response.json();
   if (!manifest.layers || !manifest.particles) throw new Error("生成结果缺少图层或流线素材");
+  if (manifest.settings?.scenario === "circulation"
+      && (Number(manifest.schemaVersion || 0) < 5
+        || manifest.experiment?.orographicLift !== true)) {
+    throw new Error("这是旧的平坦水球结果；请载入或重新计算带 ETOPO 地形的新结果");
+  }
+  if (manifest.qualityGatePassed === false) {
+    throw new Error("该结果未通过三风带或数值稳定性门禁，已拒绝播放");
+  }
+  if (!isWorldManifest(manifest)) throw new Error("旧的区域渲染不适用于全球球面，请重新计算全球结果");
   state.manifest = manifest;
   state.manifestUrl = new URL(manifestUrl, window.location.href).href;
+  globeRenderer?.setManifest(manifest);
   const levels = (manifest.levels || []).map(Number);
   const requestedLevel = Number(form.elements.level.value);
   state.level = levels.includes(requestedLevel)
@@ -376,6 +505,20 @@ function replaceOptions(name, raw, suffix = "") {
     return option;
   }));
   if ([...select.options].some((option) => option.value === previous)) select.value = previous;
+}
+
+function normalizeScenarioOptions() {
+  const select = form.elements.scenario;
+  if (!select) return;
+  const labels = {
+    circulation: "全球地形环流 · HS + ETOPO + 闭合",
+    baroclinic: "斜压波验证 · 干动力核",
+  };
+  for (const option of select.options) {
+    if (labels[option.value]) option.textContent = labels[option.value];
+  }
+  const circulation = [...select.options].find((option) => option.value === "circulation");
+  if (circulation) select.insertBefore(circulation, select.firstElementChild);
 }
 
 function applyRangeConfig(name, definition) {
@@ -457,10 +600,12 @@ function applyConfig(config) {
   state.config = config;
   const options = config.options || {};
   const definitions = config.parameters || {};
+  replaceOptions("scenario", config.scenarios || options.scenarios || options.scenario || definitions.scenario?.options);
+  normalizeScenarioOptions();
   replaceOptions("resolution", config.resolutions || options.resolutions || options.resolution || definitions.resolution?.options, "°");
   replaceOptions("level", config.levels || options.levels || options.level || definitions.level?.options, " hPa");
-  replaceOptions("region", config.regions || options.regions || options.region || definitions.region?.options);
   replaceOptions("season", config.seasons || options.seasons || options.season || definitions.season?.options);
+  replaceOptions("hemisphere", config.hemispheres || options.hemispheres || options.hemisphere || definitions.hemisphere?.options);
   for (const name of persistedFields) {
     applyRangeConfig(name, config.ranges?.[name] || definitions[name] || config.limits?.[name]);
   }
@@ -468,14 +613,17 @@ function applyConfig(config) {
   for (const [name, definition] of Object.entries(definitions)) {
     if (defaults[name] === undefined && definition?.default !== undefined) defaults[name] = definition.default;
   }
+  Object.assign(defaults, UI_DEFAULTS);
   const savedValues = readSettings().values || {};
+  assignAllowedValue(form.elements.scenario, savedValues.scenario ?? defaults.scenario);
+  applyScenarioControls();
   for (const [name, value] of Object.entries(defaults)) {
     const control = form.elements.namedItem(name);
-    if (control && savedValues[name] === undefined) assignAllowedValue(control, value);
+    if (name !== "scenario" && control && savedValues[name] === undefined) assignAllowedValue(control, value);
   }
   for (const [name, value] of Object.entries(savedValues)) {
     const control = form.elements.namedItem(name);
-    if (control && !assignAllowedValue(control, value) && defaults[name] !== undefined) assignAllowedValue(control, defaults[name]);
+    if (name !== "scenario" && control && !assignAllowedValue(control, value) && defaults[name] !== undefined) assignAllowedValue(control, defaults[name]);
   }
   renderPresets(config.presets);
   refreshFormReadout();
@@ -495,9 +643,24 @@ async function loadConfig() {
 }
 
 function buildPayload() {
-  const payload = {};
+  const payload = { region: "world" };
+  const scenario = form.elements.scenario.value;
+  if (scenario === "circulation") {
+    const heatEquator = Number(form.elements.seasonalHeatEquatorDeg.value);
+    const compatibleSeason = heatEquator > 2 ? "summer" : heatEquator < -2 ? "winter" : "equinox";
+    assignAllowedValue(form.elements.season, compatibleSeason);
+  }
+  const circulationOnly = new Set([
+    "analysisHours", "equatorToPoleContrastK", "surfaceDragDays", "seasonalHeatEquatorDeg",
+    "tibetScale", "landHeatingScale", "oceanCurrentScale",
+  ]);
+  const baroclinicOnly = new Set(["jetStrength", "perturbationAmplitude", "hemisphere"]);
   for (const name of postFields) {
-    const value = form.elements.namedItem(name).value;
+    if (scenario === "baroclinic" && circulationOnly.has(name)) continue;
+    if (scenario === "circulation" && baroclinicOnly.has(name)) continue;
+    const control = form.elements.namedItem(name);
+    if (!control) continue;
+    const value = control.value;
     payload[name] = numericFields.has(name) ? Number(value) : value;
   }
   return payload;
@@ -697,6 +860,9 @@ document.querySelectorAll(".layer").forEach((button) => button.addEventListener(
 }));
 
 document.querySelector("#playButton").addEventListener("click", () => setPlaying(!state.playing));
+globeCanvas.addEventListener("atmos-frame", (event) => {
+  updateTimelineReadout(event.detail?.frame || 0);
+});
 
 async function start() {
   restoreSettings();

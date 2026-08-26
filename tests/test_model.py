@@ -108,6 +108,11 @@ def test_default_warm_start_produces_boreal_summer_monsoon() -> None:
     assert south_china_sea[1] > 0.5
     assert east_china_sea[1] > 0.5
 
+    model.advance_hours(9.0)
+    assert _wind_at(model, 850, 88.0, 15.0)[1] > 0.5
+    assert _wind_at(model, 850, 112.0, 15.0)[1] > 0.5
+    assert _wind_at(model, 850, 125.0, 30.0)[1] > 0.5
+
 
 def test_winter_setting_reverses_low_level_asian_flow() -> None:
     winter = AtmosphereModel(
@@ -122,6 +127,14 @@ def test_winter_setting_reverses_low_level_asian_flow() -> None:
 
     assert _wind_at(winter, 850, 88.0, 15.0)[1] < -0.5
     assert _wind_at(winter, 850, 112.0, 15.0)[1] < -0.5
+    # SSPRK3 removes the slight RK2 fast-mode amplification, so the northern
+    # edge of the reversal develops a little more gradually during hour 3.
+    assert _wind_at(winter, 850, 125.0, 30.0)[1] < -0.35
+
+    winter.advance_hours(9.0)
+    assert _wind_at(winter, 850, 88.0, 15.0)[1] < -0.5
+    assert _wind_at(winter, 850, 112.0, 15.0)[1] < -0.5
+    assert _wind_at(winter, 850, 125.0, 30.0)[1] < -0.5
 
 
 def test_high_plateau_surface_temperature_uses_elevation_correction() -> None:

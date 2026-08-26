@@ -58,6 +58,44 @@ def _interpolate_real_topography(grid: LatLonGrid) -> tuple[np.ndarray, np.ndarr
         source_lat = data["lat_deg"].astype(float)
         source_lon = data["lon_deg"].astype(float)
 
+    # The interactive 5-degree grid represents a large finite-volume cell.
+    # Sampling one 1-degree point can miss a narrow range entirely or turn one
+    # summit into a grid-cell spike.  Use an area mean plus a modest sub-grid
+    # maximum contribution so Andes/Himalaya blocking survives without the
+    # point-sampled sawtooth slopes that excite grid-scale gravity waves.
+    exact_5deg = np.isclose(grid.config.dlon_deg, 5.0) and np.isclose(
+        grid.config.dlat_deg,
+        5.0,
+    )
+    if exact_5deg:
+        land_out = np.zeros(grid.shape, dtype=float)
+        elevation_out = np.zeros(grid.shape, dtype=float)
+        half_lon = 0.5 * grid.config.dlon_deg
+        half_lat = 0.5 * grid.config.dlat_deg
+        source_weights = np.cos(np.deg2rad(source_lat))
+        for iy, latitude in enumerate(grid.lat_deg):
+            lat_selector = np.abs(source_lat - latitude) <= half_lat + 1.0e-9
+            lat_indices = np.flatnonzero(lat_selector)
+            lat_weight = source_weights[lat_indices, None]
+            for ix, longitude in enumerate(grid.lon_deg):
+                lon_delta = (source_lon - longitude + 180.0) % 360.0 - 180.0
+                lon_indices = np.flatnonzero(
+                    np.abs(lon_delta) < half_lon - 1.0e-9
+                )
+                block_land = source_land_fraction[np.ix_(lat_indices, lon_indices)]
+                block_elevation = source_elevation[np.ix_(lat_indices, lon_indices)]
+                weight = np.broadcast_to(lat_weight, block_land.shape)
+                denominator = float(np.sum(weight))
+                land_out[iy, ix] = float(np.sum(block_land * weight) / denominator)
+                mean_elevation = float(
+                    np.sum(block_elevation * weight) / denominator
+                )
+                maximum_elevation = float(np.max(block_elevation))
+                elevation_out[iy, ix] = (
+                    0.72 * mean_elevation + 0.28 * maximum_elevation
+                )
+        return land_out, elevation_out
+
     if np.array_equal(grid.lat_deg, source_lat) and np.array_equal(grid.lon_deg, source_lon):
         return source_land_fraction, source_elevation
 
@@ -158,6 +196,14 @@ def build_boundary(config: ModelConfig, grid: LatLonGrid) -> BoundaryFields:
     pressure_target += season * gaussian(grid, 150, 30, 35, 16, +550.0)
     pressure_target += season * gaussian(grid, 65, -30, 35, 16, +500.0)
     pressure_target += season * gaussian(grid, 105, 16, 42, 9, -300.0)
+
+    # In early DJF spin-up, the zonal Siberian-high / Pacific-low pair alone
+    # first accelerates air eastward; Coriolis then needs several hours to turn
+    # it south. Add the observed north-high / south-low pressure contrast so
+    # even a short interactive run starts with the East Asian winter monsoon.
+    winter_strength = max(0.0, -season)
+    pressure_target += winter_strength * gaussian(grid, 110, 48, 35, 18, +400.0)
+    pressure_target += winter_strength * gaussian(grid, 125, 15, 35, 14, -400.0)
     pressure_mean = np.sum(pressure_target * grid.area_weight) / np.sum(grid.area_weight)
     pressure_target = np.clip(pressure_target - pressure_mean, -1_600.0, 1_600.0)
     pressure_mean = np.sum(pressure_target * grid.area_weight) / np.sum(grid.area_weight)

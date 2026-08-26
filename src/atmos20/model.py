@@ -67,9 +67,79 @@ class AtmosphereModel:
             self.boundary.seasonal_surface_pressure_anomaly_pa.copy()
         )
 
+        # Optional absorbing boundary used by idealized global experiments on
+        # this truncated latitude-longitude grid.  Ordinary circulation runs
+        # leave it disabled.  References are installed explicitly by the
+        # experiment so the sponge removes reflected grid noise rather than
+        # prescribing a weather system.
+        self._meridional_sponge_rate_s: np.ndarray | None = None
+        self._meridional_sponge_reference_u: np.ndarray | None = None
+        self._meridional_sponge_reference_v: np.ndarray | None = None
+        self._meridional_sponge_reference_temperature_k: np.ndarray | None = None
+        self._meridional_sponge_reference_pressure_pa: np.ndarray | None = None
+        self.meridional_sponge_start_latitude_deg: float | None = None
+        self.meridional_sponge_e_folding_seconds: float | None = None
+
         self.time_seconds = 0.0
         self.last_omega_pa_s = np.zeros_like(self.u)
         self.last_geopotential_m2_s2 = self.compute_geopotential()
+
+    def configure_meridional_sponge(
+        self,
+        *,
+        start_latitude_deg: float,
+        e_folding_seconds: float,
+        reference_u: np.ndarray,
+        reference_v: np.ndarray,
+        reference_temperature_k: np.ndarray,
+        reference_pressure_anomaly_pa: np.ndarray,
+    ) -> None:
+        """Install a smooth absorbing boundary near the truncated polar rows.
+
+        The compact model does not include the singular latitude-longitude
+        poles: its meridional walls sit at ``+-lat_limit_deg``.  A sine-squared
+        relaxation layer prevents gravity-wave and two-grid reflections there.
+        The rate is exactly zero equatorward of ``start_latitude_deg`` and
+        reaches one e-fold per ``e_folding_seconds`` at the outermost row.
+        """
+
+        limit = float(self.config.lat_limit_deg)
+        start = float(start_latitude_deg)
+        timescale = float(e_folding_seconds)
+        if not 0.0 <= start < limit:
+            raise ValueError("sponge start latitude must lie inside the model boundary")
+        if not np.isfinite(timescale) or timescale <= 0.0:
+            raise ValueError("sponge e-folding time must be positive")
+
+        expected_3d = self.u.shape
+        expected_2d = self.grid.shape
+        for name, value, shape in (
+            ("reference_u", reference_u, expected_3d),
+            ("reference_v", reference_v, expected_3d),
+            ("reference_temperature_k", reference_temperature_k, expected_3d),
+            ("reference_pressure_anomaly_pa", reference_pressure_anomaly_pa, expected_2d),
+        ):
+            if np.shape(value) != shape:
+                raise ValueError(f"{name} must have shape {shape}")
+
+        fraction = np.clip(
+            (np.abs(self.grid.lat2d_deg) - start) / (limit - start),
+            0.0,
+            1.0,
+        )
+        self._meridional_sponge_rate_s = (
+            np.sin(0.5 * np.pi * fraction) ** 2 / timescale
+        )
+        self._meridional_sponge_reference_u = np.asarray(reference_u, dtype=float).copy()
+        self._meridional_sponge_reference_v = np.asarray(reference_v, dtype=float).copy()
+        self._meridional_sponge_reference_temperature_k = np.asarray(
+            reference_temperature_k, dtype=float
+        ).copy()
+        self._meridional_sponge_reference_pressure_pa = np.asarray(
+            reference_pressure_anomaly_pa, dtype=float
+        ).copy()
+        self.meridional_sponge_start_latitude_deg = start
+        self.meridional_sponge_e_folding_seconds = timescale
 
     # ------------------------------------------------------------------
     # Construction helpers
@@ -101,7 +171,9 @@ class AtmosphereModel:
     def _build_radiative_rate(self) -> np.ndarray:
         pfrac = self.pressure_pa[:, None, None] / 100_000.0
         tau_days = 0.8 + 13.0 * (1.0 - pfrac**2)
-        return 1.0 / (tau_days * 86_400.0)
+        return self.config.newtonian_relaxation_rate_scale / (
+            tau_days * 86_400.0
+        )
 
     def _initial_temperature(self) -> np.ndarray:
         # Start from the zonal mean of the prescribed equilibrium. Named land
@@ -270,7 +342,7 @@ class AtmosphereModel:
         w_orog = (
             u_low * self.boundary.terrain_slope_x
             + v_low * self.boundary.terrain_slope_y
-        )
+        ) * self.config.orographic_lift_scale
         rho_low = self.boundary.base_surface_pressure_pa / (
             self.config.gas_constant_dry_air * np.clip(t_low, 200.0, 325.0)
         )
@@ -302,17 +374,35 @@ class AtmosphereModel:
 
         omega, dps = self._diagnose_omega_and_mass_tendency(u, v, temperature_k, ps_anom)
 
-        adv_u = self.grid.upwind_advection(u, u, v, self.active)
-        adv_v = self.grid.upwind_advection(v, u, v, self.active)
-        adv_t = self.grid.upwind_advection(temperature_k, u, v, self.active)
+        scheme = self.config.advection_scheme
+        adv_u = self.grid.advection(u, u, v, self.active, scheme)
+        adv_v = self.grid.advection(v, u, v, self.active, scheme)
+        adv_t = self.grid.advection(temperature_k, u, v, self.active, scheme)
+        dudp = self._vertical_derivative(u)
+        dvdp = self._vertical_derivative(v)
 
         metric_coriolis = (
             2.0 * self.config.rotation_rate_s * self.grid.sin_lat
             + u * np.tan(self.grid.lat2d_rad) / self.config.earth_radius_m
         )
 
-        du = -adv_u + metric_coriolis * v - dphidx
-        dv = -adv_v - metric_coriolis * u - dphidy
+        du = -adv_u - omega * dudp + metric_coriolis * v - dphidx
+        dv = -adv_v - omega * dvdp - metric_coriolis * u - dphidy
+
+        # Damp only the divergent component of fast pressure/gravity waves.
+        # For a Fourier mode, +K grad(div V) gives -K k^2 times its
+        # longitudinal velocity while leaving non-divergent rotation intact.
+        divergence_damping = self.config.divergence_damping_m2_s
+        if divergence_damping > 0.0:
+            horizontal_divergence = self.grid.divergence(u, v, self.active)
+            du += divergence_damping * self.grid.grad_x(
+                horizontal_divergence,
+                self.active,
+            )
+            dv += divergence_damping * self.grid.grad_y(
+                horizontal_divergence,
+                self.active,
+            )
 
         dtdp = self._vertical_derivative(temperature_k)
         dtemp = (
@@ -362,6 +452,27 @@ class AtmosphereModel:
         du -= 0.16 * block_rate * u
         dv -= 0.16 * block_rate * v
 
+        # Absorb waves reflected by the artificial meridional walls.  The
+        # reference state is the experiment's exact balanced basic state, not
+        # a cyclone or a front.  Removing the area-weighted pressure tendency
+        # keeps global column mass unchanged by the numerical sponge.
+        if self._meridional_sponge_rate_s is not None:
+            rate2d = self._meridional_sponge_rate_s
+            rate3d = rate2d[None, :, :]
+            du -= rate3d * (u - self._meridional_sponge_reference_u)
+            dv -= rate3d * (v - self._meridional_sponge_reference_v)
+            dtemp -= rate3d * (
+                temperature_k - self._meridional_sponge_reference_temperature_k
+            )
+            sponge_pressure = -rate2d * (
+                ps_anom - self._meridional_sponge_reference_pressure_pa
+            )
+            sponge_pressure -= (
+                np.sum(sponge_pressure * self.grid.area_weight)
+                / np.sum(self.grid.area_weight)
+            )
+            dps += sponge_pressure
+
         du[~self.active] = 0.0
         dv[~self.active] = 0.0
         dtemp[~self.active] = 0.0
@@ -374,10 +485,11 @@ class AtmosphereModel:
         self.u = np.clip(self.u, -160.0, 160.0)
         self.v = np.clip(self.v, -160.0, 160.0)
         self.temperature_k = np.clip(self.temperature_k, 175.0, 330.0)
+        ps_limit = self.config.surface_pressure_anomaly_limit_pa
         self.surface_pressure_anomaly_pa = np.clip(
             self.surface_pressure_anomaly_pa,
-            -2_500.0,
-            2_500.0,
+            -ps_limit,
+            ps_limit,
         )
         mean = np.sum(self.surface_pressure_anomaly_pa * self.grid.area_weight) / np.sum(
             self.grid.area_weight
@@ -385,6 +497,17 @@ class AtmosphereModel:
         self.surface_pressure_anomaly_pa -= mean
 
     def step(self, n_steps: int = 1) -> None:
+        """Advance with the third-order strong-stability-preserving RK scheme.
+
+        The former two-stage explicit trapezoidal method has no stable interval
+        on the imaginary axis.  In this pressure-coordinate system the fast,
+        nearly non-dissipative gravity-wave modes therefore grew into a
+        resolution-locked string of alternating equatorial extrema.  SSPRK3
+        retains the same explicit right-hand side and timestep while providing
+        a finite imaginary-axis stability interval and monotone damping of the
+        grid-scale mode under the existing spatial diffusion.
+        """
+
         dt = self.config.dt_seconds
         for _ in range(int(n_steps)):
             u0 = self.u.copy()
@@ -399,14 +522,25 @@ class AtmosphereModel:
             p1 = p0 + dt * k1.surface_pressure_anomaly
 
             k2 = self._rhs(u1, v1, t1, p1)
-            self.u = 0.5 * (u0 + u1 + dt * k2.u)
-            self.v = 0.5 * (v0 + v1 + dt * k2.v)
-            self.temperature_k = 0.5 * (t0 + t1 + dt * k2.temperature)
-            self.surface_pressure_anomaly_pa = 0.5 * (
-                p0 + p1 + dt * k2.surface_pressure_anomaly
+            u2 = 0.75 * u0 + 0.25 * (u1 + dt * k2.u)
+            v2 = 0.75 * v0 + 0.25 * (v1 + dt * k2.v)
+            t2 = 0.75 * t0 + 0.25 * (t1 + dt * k2.temperature)
+            p2 = 0.75 * p0 + 0.25 * (
+                p1 + dt * k2.surface_pressure_anomaly
             )
-            self.last_omega_pa_s = k2.omega
-            self.last_geopotential_m2_s2 = k2.geopotential
+
+            k3 = self._rhs(u2, v2, t2, p2)
+            self.u = (u0 + 2.0 * (u2 + dt * k3.u)) / 3.0
+            self.v = (v0 + 2.0 * (v2 + dt * k3.v)) / 3.0
+            self.temperature_k = (
+                t0 + 2.0 * (t2 + dt * k3.temperature)
+            ) / 3.0
+            self.surface_pressure_anomaly_pa = (
+                p0
+                + 2.0 * (p2 + dt * k3.surface_pressure_anomaly)
+            ) / 3.0
+            self.last_omega_pa_s = k3.omega
+            self.last_geopotential_m2_s2 = k3.geopotential
             self._apply_constraints()
             self.time_seconds += dt
 

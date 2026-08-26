@@ -7,21 +7,33 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/styles.css?v=3" />
+  <link rel="stylesheet" href="/styles.css?v=7" />
 </head>
 <body>
   <main class="weather-map">
-    <div class="map-media" aria-label="Atmos20 计算完成后的大气流场动画">
-      <img id="fieldImage" class="field-image" alt="气象色层与世界地图" />
-      <img id="flowImage" class="flow-image" alt="风流线动画" />
-      <canvas id="flowFreeze" class="flow-image flow-freeze" aria-hidden="true"></canvas>
+    <div class="map-media">
+      <canvas
+        id="globeCanvas"
+        class="globe-canvas"
+        tabindex="0"
+        role="img"
+        aria-label="可拖动旋转的全球大气流场。拖动旋转，滚轮或双指缩放，双击复位。"
+        aria-describedby="globeHelp"
+      ></canvas>
+      <img id="fieldImage" class="texture-source" alt="" aria-hidden="true" />
+      <img id="flowImage" class="texture-source" alt="" aria-hidden="true" />
+      <p id="globeFallback" class="globe-fallback" hidden>当前浏览器无法创建三维全球视图。</p>
       <div class="map-vignette" aria-hidden="true"></div>
+    </div>
+
+    <div id="globeHelp" class="globe-help">
+      <span>DRAG TO ROTATE</span><i></i><span>SCROLL / PINCH TO ZOOM</span><i></i><span>DOUBLE CLICK TO RESET</span>
     </div>
 
     <header class="masthead">
       <div class="brand"><span>A20</span><strong>Atmosphere</strong></div>
-      <div class="region"><i></i><span id="regionLabel">EAST ASIA / PACIFIC</span></div>
-      <div id="renderStatus" class="render-status" aria-live="polite">READY · 24 FPS</div>
+      <div class="region"><i></i><span id="regionLabel">WORLD · ORTHOGRAPHIC</span></div>
+      <div id="renderStatus" class="render-status" aria-live="polite">READY · 12 FPS</div>
     </header>
 
     <button id="drawerToggle" class="drawer-toggle" type="button" aria-controls="computeDrawer" aria-expanded="true">
@@ -34,7 +46,7 @@
         <header class="drawer-head">
           <div>
             <small>COMPUTE / PLAY</small>
-            <h2>计算一次天气场</h2>
+            <h2>计算全球环流</h2>
           </div>
           <button id="drawerClose" class="icon-button" type="button" aria-label="收起计算面板">‹</button>
         </header>
@@ -61,8 +73,15 @@
         </div>
 
         <details class="parameter-group" data-section="model" open>
-          <summary><span>01</span><b>模型</b><small id="modelSummary">1° · 850 hPa</small></summary>
+          <summary><span>01</span><b>模型</b><small id="modelSummary">5° · 850 hPa · HS 干环流</small></summary>
           <div class="group-body two-column">
+            <label class="field-control full-width">
+              <span>实验场景</span>
+              <select id="scenario" name="scenario" required>
+                <option value="circulation" selected>全球地形环流 · HS + ETOPO + 闭合</option>
+                <option value="baroclinic">斜压波验证 · 干动力核</option>
+              </select>
+            </label>
             <label class="field-control">
               <span>分辨率</span>
               <select id="resolution" name="resolution" required>
@@ -75,57 +94,83 @@
                 <option value="">正在读取…</option>
               </select>
             </label>
-            <label class="field-control">
-              <span>区域</span>
-              <select id="region" name="region" required>
-                <option value="">正在读取…</option>
-              </select>
-            </label>
-            <label class="field-control">
-              <span>季节</span>
-              <select id="season" name="season" required>
-                <option value="">正在读取…</option>
-              </select>
-            </label>
             <label class="range-control full-width">
-              <span><b>模拟时长</b><output for="spinupHours" data-output="spinupHours">3 h</output></span>
-              <input id="spinupHours" name="spinupHours" type="range" min="0" max="12" step="0.5" value="3" />
+              <span><b id="spinupLabel">环流建立期</b><output for="spinupHours" data-output="spinupHours">5 d</output></span>
+              <input id="spinupHours" name="spinupHours" type="range" min="48" max="720" step="24" value="120" />
             </label>
+            <label class="range-control full-width" data-circulation-only>
+              <span><b>分析 / 播放天数</b><output for="analysisHours" data-output="analysisHours">5 d</output></span>
+              <input id="analysisHours" name="analysisHours" type="range" min="24" max="720" step="24" value="120" />
+            </label>
+            <div class="compatibility-control" aria-hidden="true">
+              <select id="season" name="season" tabindex="-1">
+                <option value="equinox" selected>春秋分</option>
+                <option value="summer">北半球夏季</option>
+                <option value="winter">北半球冬季</option>
+              </select>
+            </div>
           </div>
         </details>
 
         <details class="parameter-group" data-section="physics">
-          <summary><span>02</span><b>物理</b><small>边界敏感性</small></summary>
+          <summary><span>02</span><b>物理</b><small id="physicsSummary">HS + ETOPO + 三圈闭合</small></summary>
           <div class="group-body">
-            <label class="range-control">
+            <label class="field-control" data-baroclinic-only>
+              <span>发展半球</span>
+              <select id="hemisphere" name="hemisphere" required>
+                <option value="north">北半球</option>
+                <option value="south">南半球</option>
+              </select>
+            </label>
+            <label class="range-control" data-baroclinic-only>
+              <span><b>急流峰值</b><output for="jetStrength" data-output="jetStrength">35 m/s</output></span>
+              <input id="jetStrength" name="jetStrength" type="range" min="25" max="45" step="1" value="35" />
+            </label>
+            <label class="range-control" data-baroclinic-only>
+              <span><b>触发扰动</b><output for="perturbationAmplitude" data-output="perturbationAmplitude">1.0 m/s</output></span>
+              <input id="perturbationAmplitude" name="perturbationAmplitude" type="range" min="0" max="2" step="0.1" value="1" />
+            </label>
+            <label class="range-control" data-circulation-only>
+              <span><b>赤道—极地温差</b><output for="equatorToPoleContrastK" data-output="equatorToPoleContrastK">60 K</output></span>
+              <input id="equatorToPoleContrastK" name="equatorToPoleContrastK" type="range" min="30" max="90" step="5" value="60" />
+            </label>
+            <label class="range-control" data-circulation-only>
+              <span><b>近地面摩擦时间</b><output for="surfaceDragDays" data-output="surfaceDragDays">1.00 d</output></span>
+              <input id="surfaceDragDays" name="surfaceDragDays" type="range" min="0.25" max="5" step="0.25" value="1" />
+            </label>
+            <label class="range-control" data-circulation-only>
+              <span><b>季节热赤道纬度</b><output for="seasonalHeatEquatorDeg" data-output="seasonalHeatEquatorDeg">0°</output></span>
+              <input id="seasonalHeatEquatorDeg" name="seasonalHeatEquatorDeg" type="range" min="-30" max="30" step="1" value="0" />
+            </label>
+            <label class="range-control" data-circulation-only>
               <span><b>青藏高原高度</b><output for="tibetScale" data-output="tibetScale">1.00×</output></span>
               <input id="tibetScale" name="tibetScale" type="range" min="0" max="2" step="0.05" value="1" />
             </label>
-            <label class="range-control">
-              <span><b>陆地加热</b><output for="landHeatingScale" data-output="landHeatingScale">1.00×</output></span>
+            <label class="range-control" data-circulation-only>
+              <span><b>季节陆地加热</b><output for="landHeatingScale" data-output="landHeatingScale">1.00×</output></span>
               <input id="landHeatingScale" name="landHeatingScale" type="range" min="0" max="2" step="0.05" value="1" />
             </label>
-            <label class="range-control">
-              <span><b>洋流强度</b><output for="oceanCurrentScale" data-output="oceanCurrentScale">1.00×</output></span>
+            <label class="range-control" data-circulation-only>
+              <span><b>洋流温度异常</b><output for="oceanCurrentScale" data-output="oceanCurrentScale">1.00×</output></span>
               <input id="oceanCurrentScale" name="oceanCurrentScale" type="range" min="0" max="2" step="0.05" value="1" />
             </label>
           </div>
         </details>
 
         <details class="parameter-group" data-section="animation">
-          <summary><span>03</span><b>动画</b><small id="animationSummary">72 f · 24 fps</small></summary>
+          <summary><span>03</span><b>动画</b><small id="animationSummary">48 f · 12 fps</small></summary>
           <div class="group-body two-column">
             <label class="field-control">
               <span>帧数</span>
-              <input id="frames" name="frames" type="number" min="24" max="120" step="1" value="72" required />
+              <input id="frames" name="frames" type="number" min="24" max="120" step="1" value="48" required />
             </label>
             <label class="field-control">
               <span>FPS</span>
-              <input id="fps" name="fps" type="number" min="12" max="30" step="1" value="24" required />
+              <input id="fps" name="fps" type="number" min="12" max="30" step="1" value="12" required />
             </label>
             <label class="field-control full-width">
               <span>粒子数</span>
-              <input id="particles" name="particles" type="number" min="800" max="6000" step="100" value="3600" required />
+              <input id="particles" name="particles" type="number" min="800" max="6000" step="100" value="2400" required />
             </label>
             <label class="range-control full-width">
               <span><b>流动速度</b><output for="flowSpeed" data-output="flowSpeed">1.00×</output></span>
@@ -154,7 +199,7 @@
 
         <div class="estimate-row">
           <span>预计耗时</span>
-          <strong id="estimateTime">约 1–2 分钟</strong>
+          <strong id="estimateTime">约 4–6 分钟</strong>
           <small id="validationMessage"></small>
         </div>
         <button id="renderButton" class="render-button" type="submit" disabled>
@@ -165,7 +210,9 @@
 
     <aside class="layer-menu" aria-label="气象图层">
       <span class="menu-caption">LAYERS</span>
-      <button type="button" data-layer="wind" class="layer active"><b>W</b><span>风速</span></button>
+      <button type="button" data-layer="zonalWind" class="layer active" aria-label="带符号纬向风，东风为负，西风为正"><b>U</b><span>纬向</span></button>
+      <button type="button" data-layer="fronts" class="layer"><b>F</b><span>锋面</span></button>
+      <button type="button" data-layer="wind" class="layer"><b>W</b><span>风速</span></button>
       <button type="button" data-layer="temperature" class="layer"><b>T</b><span>温度</span></button>
       <button type="button" data-layer="pressure" class="layer"><b>P</b><span>气压</span></button>
       <button type="button" data-layer="omega" class="layer"><b>Ω</b><span>垂直</span></button>
@@ -174,27 +221,30 @@
     </aside>
 
     <section class="layer-title">
-      <small id="layerEnglish">WIND</small>
-      <h1 id="layerName">风速</h1>
-      <p><span id="levelLabel">850 hPa</span><i></i><span id="loopLabel">3.0 s loop</span></p>
+      <small id="layerEnglish">SIGNED ZONAL WIND</small>
+      <h1 id="layerName">纬向风</h1>
+      <p><span id="levelLabel">900 hPa</span><i></i><span id="loopLabel">4.0 s loop</span></p>
     </section>
 
     <footer class="control-dock">
       <button id="playButton" class="play-button" type="button" aria-label="暂停动画"><span></span></button>
       <div class="level-control fixed-level">
         <small>PRESSURE LEVEL</small>
-        <strong>850 hPa</strong>
+        <strong>900 hPa</strong>
       </div>
       <div class="legend">
-        <div class="legend-meta"><span id="legendName">Wind speed</span><span id="legendUnit">m/s</span></div>
+        <div class="legend-meta"><span id="legendName">SIGNED ZONAL WIND</span><span id="legendUnit">m/s</span></div>
         <div id="legendBar" class="legend-bar"></div>
         <div class="legend-values"><span id="legendMin">0</span><span id="legendMid">17.5</span><span id="legendMax">35</span></div>
+        <div id="frontLegend" class="front-legend" hidden><span class="cold">冷锋</span><span class="warm">暖锋</span><span class="stationary">准静止</span></div>
+        <div id="zonalLegend" class="zonal-legend"><span class="easterly">东风 &lt; 0</span><span class="zero">0</span><span class="westerly">西风 &gt; 0</span></div>
       </div>
-      <div class="media-note"><small>PLAYBACK</small><strong id="mediaNote">72 FRAMES · READY</strong></div>
+      <div class="media-note"><small>PLAYBACK</small><strong id="mediaNote">48 FRAMES · READY</strong></div>
     </footer>
 
     <div id="assetLoader" class="asset-loader"><span></span><b>LOADING RENDER</b></div>
   </main>
-  <script src="/app.js?v=4"></script>
+  <script src="/globe.js?v=5"></script>
+  <script src="/app.js?v=14"></script>
 </body>
 </html>

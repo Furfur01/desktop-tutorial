@@ -30,12 +30,28 @@ class ModelConfig:
     heat_capacity_cp: float = 1004.0
 
     horizontal_diffusion_rate_s: float = 1.5e-5
+    # Selective damping of horizontally divergent fast modes. Rotational flow
+    # is unaffected because the tendency is proportional to grad(div V).
+    divergence_damping_m2_s: float = 0.0
     vertical_mixing_rate_s: float = 7.0e-6
+    # ``upwind`` preserves the original interactive circulation behaviour.
+    # Idealized life-cycle experiments can opt into the less diffusive,
+    # monotonically limited second-order reconstruction with ``tvd``.
+    advection_scheme: str = "upwind"
     surface_drag_land_s: float = 1.0 / 86_400.0
     surface_drag_ocean_s: float = 1.0 / (2.0 * 86_400.0)
     terrain_blocking_rate_s: float = 1.0 / (4.0 * 3600.0)
+    # Scale the project's terrain-following mechanical-lift parameterization.
+    # Pure pressure-coordinate test cases set this to zero because their
+    # analytic surface geopotential is not an orographic lower boundary.
+    orographic_lift_scale: float = 1.0
     mass_damping_rate_s: float = 1.0 / (12.0 * 86_400.0)
     surface_pressure_coupling: float = 0.02
+    surface_pressure_anomaly_limit_pa: float = 2_500.0
+    # Multiply the height-dependent Newtonian relaxation rate. Experiments
+    # can use values below one for a longer relaxation time or zero to turn
+    # the forcing off while retaining the default climatological behaviour.
+    newtonian_relaxation_rate_scale: float = 1.0
 
     # Lower-boundary controls exposed by the UI.
     tibet_height_scale: float = 1.0

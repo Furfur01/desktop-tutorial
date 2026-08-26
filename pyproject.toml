@@ -14,10 +14,12 @@ dependencies = [
   "numpy>=1.26",
   "matplotlib>=3.8",
   "gradio>=5.0",
+  "Pillow>=10.0",
+  "scipy>=1.11",
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0", "scipy>=1.11"]
+dev = ["pytest>=8.0"]
 
 [tool.setuptools]
 package-dir = {"" = "src"}

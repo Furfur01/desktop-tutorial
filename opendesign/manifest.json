@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-25T17:21:03.4620149+08:00",
+  "generated": "2026-08-25T23:20:17.4231665+08:00",
   "sections": [
     {
       "id": "mockups",
@@ -9,7 +9,7 @@
           "slug": "atmos20-flow",
           "files": [
             {
-              "label": "Atmos20 compute and play map",
+              "label": "Atmos20 interactive globe",
               "path": "mockups/atmos20-flow/index.html"
             }
           ]
