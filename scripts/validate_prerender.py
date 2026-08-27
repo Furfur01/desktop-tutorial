@@ -58,7 +58,9 @@ def _validate_animation(
     }
 
 
-def _iter_layer_assets(manifest: dict[str, object]) -> Iterable[tuple[str, str, bool]]:
+def _iter_layer_assets(
+    manifest: dict[str, object],
+) -> Iterable[tuple[str, str, str, bool]]:
     layers = manifest.get("layers")
     if not isinstance(layers, dict):
         raise ValidationError("manifest.layers must be an object")
@@ -74,7 +76,7 @@ def _iter_layer_assets(manifest: dict[str, object]) -> Iterable[tuple[str, str, 
                 raise ValidationError(
                     f"layer {layer_name!r} at {level} has a non-string asset"
                 )
-            yield f"layer {layer_name}@{level}", filename, animated
+            yield str(layer_name), str(level), filename, animated
 
 
 def validate_manifest(manifest_path: Path) -> dict[str, object]:
@@ -117,16 +119,46 @@ def validate_manifest(manifest_path: Path) -> dict[str, object]:
         raise ValidationError("circulation quality gate did not pass")
 
     checks: list[dict[str, object]] = []
-    for label, filename, animated in _iter_layer_assets(manifest):
+    animated_layer_checks: list[dict[str, object]] = []
+    for layer_name, level, filename, animated in _iter_layer_assets(manifest):
         expected = expected_frames if animated else 1
-        checks.append(
-            _validate_animation(
-                bundle_root / filename,
-                expected_frames=expected,
-                require_motion=animated,
-                label=label,
-            )
+        check = _validate_animation(
+            bundle_root / filename,
+            expected_frames=expected,
+            require_motion=False,
+            label=f"layer {layer_name}@{level}",
         )
+        check.update(
+            {
+                "kind": "layer",
+                "layer": layer_name,
+                "level": level,
+                "animated": animated,
+            }
+        )
+        checks.append(check)
+        if animated:
+            animated_layer_checks.append(check)
+
+    moving_layers = [
+        check
+        for check in animated_layer_checks
+        if int(check["uniqueSampledFrames"]) >= 2
+    ]
+    if not moving_layers:
+        raise ValidationError("all animated scalar layers are visually static")
+
+    default_layer = manifest.get("defaultLayer")
+    if isinstance(default_layer, str):
+        default_checks = [
+            check for check in animated_layer_checks if check["layer"] == default_layer
+        ]
+        if default_checks and not any(
+            int(check["uniqueSampledFrames"]) >= 2 for check in default_checks
+        ):
+            raise ValidationError(
+                f"default layer {default_layer!r} is visually static in sampled frames"
+            )
 
     particles = manifest.get("particles")
     if not isinstance(particles, dict) or not particles:
@@ -134,14 +166,14 @@ def validate_manifest(manifest_path: Path) -> dict[str, object]:
     for level, filename in particles.items():
         if not isinstance(filename, str):
             raise ValidationError(f"particle asset at {level} is not a string")
-        checks.append(
-            _validate_animation(
-                bundle_root / filename,
-                expected_frames=expected_frames,
-                require_motion=True,
-                label=f"particles@{level}",
-            )
+        check = _validate_animation(
+            bundle_root / filename,
+            expected_frames=expected_frames,
+            require_motion=True,
+            label=f"particles@{level}",
         )
+        check.update({"kind": "particles", "level": str(level), "animated": True})
+        checks.append(check)
 
     summary = {
         "manifest": str(manifest_path),
@@ -149,6 +181,7 @@ def validate_manifest(manifest_path: Path) -> dict[str, object]:
         "frames": expected_frames,
         "fps": fps,
         "simulatedHours": round(times[-1] - times[0], 3),
+        "movingScalarLayers": [check["layer"] for check in moving_layers],
         "checkedAssets": len(checks),
         "assets": checks,
     }
