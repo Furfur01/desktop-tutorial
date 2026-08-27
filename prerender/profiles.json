@@ -1,0 +1,236 @@
+{
+  "schemaVersion": 1,
+  "defaults": {
+    "region": "world",
+    "season": "equinox",
+    "flowSpeed": 1.0,
+    "trail": 0.94,
+    "tibetScale": 1.0,
+    "landHeatingScale": 1.0,
+    "oceanCurrentScale": 1.0,
+    "equatorToPoleContrastK": 60.0,
+    "surfaceDragDays": 1.0,
+    "seasonalHeatEquatorDeg": 0.0,
+    "jetStrength": 35.0,
+    "perturbationAmplitude": 1.0,
+    "hemisphere": "north"
+  },
+  "profiles": [
+    {
+      "id": "circulation-default-10d",
+      "label": {
+        "zh": "标准三圈环流 · 10 天",
+        "en": "Standard three-cell circulation · 10 days"
+      },
+      "description": {
+        "zh": "与当前默认设置一致：5°、900 hPa、5 天建立期加 5 天连续分析窗。",
+        "en": "Matches the current default: 5°, 900 hPa, five-day spin-up and a five-day continuous analysis window."
+      },
+      "tags": [
+        "default",
+        "circulation",
+        "equinox"
+      ],
+      "legacyManifestUrl": "/assets/prerender/manifest.json",
+      "legacyManifestPath": "web/assets/prerender/manifest.json",
+      "settings": {
+        "scenario": "circulation",
+        "resolution": 5.0,
+        "level": 900,
+        "spinupDays": 5,
+        "analysisDays": 5,
+        "frames": 48,
+        "fps": 12,
+        "particles": 2400
+      },
+      "cloud": {
+        "enabled": true,
+        "estimatedRunnerMinutes": 8
+      }
+    },
+    {
+      "id": "circulation-long-equinox-90d",
+      "label": {
+        "zh": "长积分春秋分环流 · 90 天",
+        "en": "Long equinox circulation · 90 days"
+      },
+      "description": {
+        "zh": "5° 全球网格，先积分 60 天建立环流，再连续保存 30 天动态过程。",
+        "en": "A 5° global run with 60 days of spin-up followed by a continuously sampled 30-day animation window."
+      },
+      "tags": [
+        "long-run",
+        "circulation",
+        "equinox"
+      ],
+      "settings": {
+        "scenario": "circulation",
+        "resolution": 5.0,
+        "level": 900,
+        "spinupDays": 60,
+        "analysisDays": 30,
+        "frames": 72,
+        "fps": 12,
+        "particles": 3200
+      },
+      "cloud": {
+        "enabled": true,
+        "estimatedRunnerMinutes": 65
+      }
+    },
+    {
+      "id": "circulation-long-summer-60d",
+      "label": {
+        "zh": "北半球夏季环流 · 60 天",
+        "en": "Boreal-summer circulation · 60 days"
+      },
+      "description": {
+        "zh": "5° 全球网格，30 天建立期加 30 天动态分析窗，热赤道位于 23.44°N。",
+        "en": "A 5° global run with 30 days of spin-up and 30 days of playback, using a 23.44°N thermal equator."
+      },
+      "tags": [
+        "long-run",
+        "circulation",
+        "summer"
+      ],
+      "settings": {
+        "scenario": "circulation",
+        "resolution": 5.0,
+        "level": 900,
+        "season": "summer",
+        "seasonalHeatEquatorDeg": 23.44,
+        "spinupDays": 30,
+        "analysisDays": 30,
+        "frames": 72,
+        "fps": 12,
+        "particles": 3200
+      },
+      "cloud": {
+        "enabled": true,
+        "estimatedRunnerMinutes": 48
+      }
+    },
+    {
+      "id": "circulation-long-winter-60d",
+      "label": {
+        "zh": "北半球冬季环流 · 60 天",
+        "en": "Boreal-winter circulation · 60 days"
+      },
+      "description": {
+        "zh": "5° 全球网格，30 天建立期加 30 天动态分析窗，热赤道位于 23.44°S。",
+        "en": "A 5° global run with 30 days of spin-up and 30 days of playback, using a 23.44°S thermal equator."
+      },
+      "tags": [
+        "long-run",
+        "circulation",
+        "winter"
+      ],
+      "settings": {
+        "scenario": "circulation",
+        "resolution": 5.0,
+        "level": 900,
+        "season": "winter",
+        "seasonalHeatEquatorDeg": -23.44,
+        "spinupDays": 30,
+        "analysisDays": 30,
+        "frames": 72,
+        "fps": 12,
+        "particles": 3200
+      },
+      "cloud": {
+        "enabled": true,
+        "estimatedRunnerMinutes": 48
+      }
+    },
+    {
+      "id": "circulation-quality-20d",
+      "label": {
+        "zh": "2.5° 高质量环流 · 20 天",
+        "en": "2.5° quality circulation · 20 days"
+      },
+      "description": {
+        "zh": "2.5° 全球网格，10 天建立期加 10 天连续分析窗；用于观察更细的地形与风带结构。",
+        "en": "A 2.5° global run with ten days of spin-up and ten days of continuous playback for finer terrain and wind-belt structure."
+      },
+      "tags": [
+        "quality",
+        "circulation",
+        "equinox"
+      ],
+      "settings": {
+        "scenario": "circulation",
+        "resolution": 2.5,
+        "level": 900,
+        "spinupDays": 10,
+        "analysisDays": 10,
+        "frames": 72,
+        "fps": 12,
+        "particles": 4200
+      },
+      "cloud": {
+        "enabled": true,
+        "estimatedRunnerMinutes": 110
+      }
+    },
+    {
+      "id": "baroclinic-north-10d",
+      "label": {
+        "zh": "北半球干斜压波 · 10 天",
+        "en": "Northern dry baroclinic wave · 10 days"
+      },
+      "description": {
+        "zh": "5°、850 hPa，连续积分 10 天并诊断气旋、冷锋和暖锋的演变。",
+        "en": "A ten-day 5° life cycle at 850 hPa with evolving cyclone, cold-front and warm-front diagnostics."
+      },
+      "tags": [
+        "baroclinic",
+        "north"
+      ],
+      "settings": {
+        "scenario": "baroclinic",
+        "resolution": 5.0,
+        "level": 850,
+        "spinupDays": 10,
+        "analysisDays": 0,
+        "frames": 72,
+        "fps": 12,
+        "particles": 3000,
+        "hemisphere": "north"
+      },
+      "cloud": {
+        "enabled": true,
+        "estimatedRunnerMinutes": 12
+      }
+    },
+    {
+      "id": "baroclinic-south-10d",
+      "label": {
+        "zh": "南半球干斜压波 · 10 天",
+        "en": "Southern dry baroclinic wave · 10 days"
+      },
+      "description": {
+        "zh": "与北半球方案使用相同参数，在南半球连续积分 10 天。",
+        "en": "The matching ten-day dry life cycle in the Southern Hemisphere."
+      },
+      "tags": [
+        "baroclinic",
+        "south"
+      ],
+      "settings": {
+        "scenario": "baroclinic",
+        "resolution": 5.0,
+        "level": 850,
+        "spinupDays": 10,
+        "analysisDays": 0,
+        "frames": 72,
+        "fps": 12,
+        "particles": 3000,
+        "hemisphere": "south"
+      },
+      "cloud": {
+        "enabled": true,
+        "estimatedRunnerMinutes": 12
+      }
+    }
+  ]
+}
