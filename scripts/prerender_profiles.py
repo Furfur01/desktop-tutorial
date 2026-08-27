@@ -19,6 +19,8 @@ from pathlib import Path
 from typing import Any, Iterable
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 DEFAULT_REGISTRY = ROOT / "prerender" / "profiles.json"
 DEFAULT_OUTPUT_ROOT = ROOT / "web" / "assets" / "prerenders"
 DEFAULT_CATALOG = DEFAULT_OUTPUT_ROOT / "catalog.json"
