@@ -15,7 +15,7 @@ on:
         type: boolean
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: atmos20-prerender-${{ github.repository }}-${{ github.ref }}
@@ -28,8 +28,8 @@ jobs:
     outputs:
       matrix: ${{ steps.matrix.outputs.matrix }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - id: matrix
@@ -53,8 +53,8 @@ jobs:
       MPLBACKEND: Agg
       PYTHONUNBUFFERED: "1"
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
           cache: pip
@@ -78,7 +78,7 @@ jobs:
         run: |
           python scripts/validate_prerender.py \
             "$RUNNER_TEMP/prerenders/$PROFILE/manifest.json"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: prerender-${{ matrix.profile }}
           path: ${{ runner.temp }}/prerenders/${{ matrix.profile }}
@@ -91,15 +91,17 @@ jobs:
     needs: render
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    permissions:
+      contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ github.ref_name }}
           fetch-depth: 0
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: prerender-*
           path: ${{ runner.temp }}/downloaded-prerenders
