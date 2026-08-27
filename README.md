@@ -1,204 +1,177 @@
-# Atmos20
+# Atmos20 — 气象模拟
 
-A small, interactive **idealized Earth atmosphere** for experimenting with
-global circulation and the dry life cycle of a midlatitude baroclinic wave.
+[中文说明](README.zh-CN.md)
 
-- **Vertical grid:** 1000–50 hPa, one layer every 50 hPa (20 levels) in the
-  circulation model; the dry baroclinic experiment currently integrates
-  950–50 hPa in the 5° preview and 900–50 hPa at finer resolutions
-- **Default global-circulation experiment:** Held–Suarez dry thermal forcing
-  plus an explicitly documented reduced-order Hadley/Ferrel/polar overturning
-  closure; no zonal wind or pressure centres are prescribed
-- **Physical lower boundary:** packaged ETOPO 2022 relief sets surface
-  geopotential and pressure, masks underground pressure levels, and drives
-  slope lift/form drag; the renderer uses the matching 1° shaded relief
-- **Two viewers:** a scientific Gradio inspector for model fields and a map-first,
-  compute-then-play Windy-style view with backend rendering
+Atmos20 is an interactive, idealized atmospheric-circulation and weather-system simulator. It integrates a compact 20-level dry atmosphere, renders the evolving model state into browser-safe animated media, and plays the result on a rotatable globe.
 
-The frontend includes a maximum-detail 1° grid. The scientific field inspector
-defaults to the area-aggregated 2.5° circulation grid. The longer dry
-baroclinic-wave playback defaults to 5°; 2.5° is its practical high-quality
-preset, while a 1° global life cycle can take hours.
+> Atmos20 is a mechanism demonstration and numerical playground. It is not a weather forecast model, reanalysis product, or climate projection.
 
-## What you can inspect
+## What it does
 
-The frontend provides a horizontal pressure-level map and a longitude-pressure vertical section. At 850 hPa, the central Tibetan Plateau is below ground and is rendered as a solid obstacle; at 90°E, the vertical section shows the plateau reaching roughly 550–600 hPa.
+The repository currently contains two experiment families:
 
-## Run the frontend
+- **Terrain-coupled global circulation** — Held–Suarez-style thermal relaxation and surface drag, ETOPO lower-boundary terrain, land/ocean temperature contrasts, orographic coupling, and a reduced three-cell overturning closure.
+- **Dry baroclinic-wave life cycle** — an idealized mid-latitude instability experiment with objective cyclone and front diagnostics.
+
+Each run produces synchronized animated WebP assets for wind, signed zonal wind, temperature, pressure anomaly, vertical motion, geopotential height, fronts where applicable, and particle trajectories. The browser receives rendered media and a JSON manifest; it does not receive the full numerical state.
+
+## Quick start
+
+Atmos20 requires Python 3.10 or newer.
 
 ```bash
 python -m venv .venv
-# Windows: .venv\Scripts\activate
-# macOS/Linux: source .venv/bin/activate
-pip install -e .
-python app.py
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
+python -m pip install -e .[dev]
+
+python scripts/prerender_windy.py \
+  --scenario circulation \
+  --output web/assets/prerender \
+  --grid-degrees 5 \
+  --spinup-hours 120 \
+  --analysis-hours 120 \
+  --frames 48 \
+  --fps 12 \
+  --particles 2400 \
+  --level 900
+
+python windy_app.py
 ```
 
-Open the local Gradio address printed in the terminal.
+Open the address printed by `windy_app.py`.
 
-## Run the compute-then-play flow map
+## Manual computation and pre-rendered results
 
-The Windy-style page uses an on-demand backend render queue. Adjust model,
-boundary-condition and animation parameters in the left drawer,
-then choose **开始计算**. Python advances Atmos20 and renders the map layers and
-particle loop; the page shows real stage progress and automatically plays the
-new result when its manifest is complete.
+The left drawer now has two result sources:
 
-The browser still receives only WebP media and a small JSON manifest. It never
-downloads model arrays or advances atmospheric particles itself.
+- **Pre-rendered result** loads a completed bundle from `web/assets/prerenders/catalog.json`. This is the fastest way to explore the model and does not start a local integration.
+- **Manual computation** sends the visible settings to the local backend. The backend integrates the model, renders all media, validates the circulation gate, and loads the new bundle when it is complete.
 
-Start the server:
+The repository ships with the original 10-day default bundle. Additional catalog entries become selectable after their cloud or local renders are published.
+
+## Long integrations
+
+Named profiles use days instead of making users enter very large hour counts. Internally, the renderer still converts those durations to seconds and advances one continuous model trajectory.
+
+The included library covers:
+
+| Profile | Grid | Simulated time | Purpose |
+|---|---:|---:|---|
+| `circulation-default-10d` | 5° | 10 days | Current default |
+| `circulation-long-equinox-90d` | 5° | 90 days | 60-day spin-up + 30-day playback |
+| `circulation-long-summer-60d` | 5° | 60 days | Boreal-summer thermal equator |
+| `circulation-long-winter-60d` | 5° | 60 days | Boreal-winter thermal equator |
+| `circulation-quality-20d` | 2.5° | 20 days | Finer terrain and wind belts |
+| `baroclinic-north-10d` | 5° | 10 days | Northern dry life cycle |
+| `baroclinic-south-10d` | 5° | 10 days | Southern dry life cycle |
+
+Edit `prerender/profiles.json` to add a controlled parameter combination. Avoid treating the profile list as a Cartesian sweep: media size and compute cost grow quickly.
+
+## Cloud pre-rendering with GitHub Actions
+
+The workflow `.github/workflows/prerender.yml` is deliberately manual. In the repository’s **Actions** tab, run **build pre-render library**, then enter comma-separated profile IDs or `all`.
+
+The workflow:
+
+1. validates the requested profile list;
+2. fans independent profiles out across a bounded matrix;
+3. uses the runner’s available CPU threads for compiled numerical libraries;
+4. renders each profile with a 330-minute per-job ceiling;
+5. checks frame count, timeline consistency, circulation quality, and visible frame-to-frame motion;
+6. uploads each bundle as a short-lived workflow artifact; and
+7. optionally commits successful bundles plus the rebuilt catalog back to the selected branch.
+
+Generated media can make the repository large. Select only the profiles that are useful, and review your repository’s current GitHub Actions usage and billing policy before launching expensive runs.
+
+## Local multi-core rendering
+
+A single atmospheric trajectory is causally ordered in time, so Atmos20 does not split one integration across unrelated processes. Independent profiles are safe to parallelize.
 
 ```bash
-python windy_app.py --host 127.0.0.1 --port 7861
+python scripts/prerender_profiles.py list
+
+python scripts/prerender_profiles.py render-many \
+  --select circulation-long-equinox-90d,baroclinic-north-10d \
+  --jobs 2
 ```
 
-Open `http://127.0.0.1:7861`. The default **全球地形环流 · HS + ETOPO + 闭合**
-experiment uses a 5° grid at 900 hPa, a five-day establishment period, a
-continuous five-day analysis/playback window, 48 frames at 12 fps, and 2400
-particles. The 2.5° preset raises spatial and playback resolution. Only one
-heavy calculation runs at a time, and up to five completed render bundles are
-retained. A result is published only when all five directional checks—tropical
-easterlies, two midlatitude westerly belts, and two polar easterly belts—pass at
-every sampled time, the numerical wind-speed limits pass, and the tropical
-high-wavenumber gravity-wave gate finds no growing grid-locked pattern.
+`--jobs` controls the number of independent worker processes. Keep it below the number of profiles and reduce it when memory is limited. The GitHub Actions workflow performs the same coarse-grained parallelism with separate matrix jobs.
 
-The same standard run can be queued through the small HTTP API (the response
-contains a `statusUrl` to poll until its manifest is ready):
+To render one profile:
 
 ```bash
-curl -X POST http://127.0.0.1:7861/api/render -H "Content-Type: application/json" -d '{"scenario":"circulation","resolution":5,"level":900,"region":"world","spinupHours":120,"analysisHours":120,"frames":48,"fps":12,"particles":2400,"equatorToPoleContrastK":60,"surfaceDragDays":1,"seasonalHeatEquatorDeg":0}'
+python scripts/prerender_profiles.py render \
+  --profile circulation-long-equinox-90d
 ```
 
-Controls are scenario-aware. The circulation experiment exposes the
-equator-to-pole temperature contrast, near-surface drag time, seasonal
-thermal-equator latitude, Tibetan height, seasonal land heating, and ocean-
-current temperature anomalies. The dry baroclinic experiment exposes the developing
-hemisphere, jet peak speed, and trigger amplitude. Both scenarios expose the
-grid, pressure-level view, animation frame rate, particle density, flow speed,
-trail length, and display opacity.
-
-### What is physical in the three-cell circulation experiment
-
-Held–Suarez Newtonian relaxation supplies the zonally symmetric radiative
-temperature contrast, while sigma-dependent Rayleigh drag represents the
-planetary boundary layer. The compact grid cannot resolve the long eddy
-statistics needed to produce a stable Ferrel cell, so the default mode adds a
-transparent reduced-order closure: it relaxes only the zonal-mean meridional
-wind toward vertically mass-neutral lower/upper branches for the Hadley,
-Ferrel, and polar cells. It never assigns zonal wind or surface pressure.
-The prognostic momentum equation generates the east/west wind signs through
-Coriolis acceleration and drag. Setting the thermal contrast to zero switches
-the closure off; moving the thermal equator shifts the continuous cell basis
-seasonally.
-
-This is a conceptual global-circulation simulator, not a claim that the coarse
-primitive-equation grid has independently resolved a climate. The manifest
-records the closure and terrain parameters. The circulation starts from a
-terrain-balanced resting state: ETOPO changes local surface pressure and
-surface geopotential, removes below-ground levels, and supplies mechanical
-lift/form drag. No wind field or pressure centre is inserted.
-
-### What is physical in the dry cyclone experiment
-
-The initial atmosphere follows the analytic pressure-coordinate test of
-[Jablonowski and Williamson (2006)](https://doi.org/10.1256/qj.06.12): its
-zonal jets, temperature, and geopotential are hydrostatically and
-gradient-wind balanced. The only imposed trigger is the published localized
-Gaussian perturbation to zonal wind—1 m/s by default, centred near 20°E and
-40° in the selected hemisphere. No low-pressure centre, cyclone-shaped vortex,
-warm-sector triangle, cold front, or warm front is drawn into the initial
-state.
-
-Python continuously integrates the dry primitive-equation model through the
-requested life cycle and samples real model states along that same run. It then
-pre-renders synchronized field and particle WebP animations for playback; this
-is not a frozen field animated in the browser, nor an offline cache prepared in
-advance. Playback keeps hour 0 through day 10 but samples the late, rapidly
-developing part of the life cycle more densely. The front layer is an objective diagnostic of the evolving output:
-potential-temperature gradient and the thermal-front parameter locate frontal
-zones and lines, while isotherm-normal motion over an approximately fixed
-six-hour diagnostic lag distinguishes cold and warm fronts independently of
-the nonuniform playback sampling. The minimum-pressure and front-cell readouts
-in the timeline are diagnostics, not forcing inputs.
-
-The dry experiment is intentionally idealized. It has no moisture, clouds,
-latent heating, or precipitation, and its analytic lower boundary replaces the
-real-terrain dynamics used by the circulation scenario; the circulation-only
-mechanical terrain-lift parameterization is explicitly disabled. The fixed
-pressure grid, weak numerical diffusion/mixing, and truncated latitude domain
-make this a mechanism demonstration rather than a quantitative reproduction of
-the published reference solution. The dynamical grid
-stops at ±77.5°, although the contextual world map continues to the poles. A
-smooth absorbing layer from 62.5° poleward relaxes only boundary departures
-back toward the unperturbed analytic state, preventing the artificial wall
-from reflecting grid noise into the weather region; timeline diagnostics use
-only the undamped latitude band. At 5°, fronts are broad and their symbols are
-necessarily coarse; use 2.5° when
-the frontal geometry matters more than render time. The experiment is suitable
-for studying a physically triggered baroclinic life cycle, not for reproducing
-a particular observed storm.
-
-Every render is a complete 2:1 equirectangular world texture (360° longitude by
-180° latitude) mapped onto the draggable orthographic globe. A flat global view
-is used only as a compatibility fallback when WebGL 2 is unavailable.
-`web/assets/prerender/` is only the instant initial view. Regenerate that fallback
-after changing renderer code with:
+To rebuild the browser catalog after copying or deleting bundles:
 
 ```bash
-python scripts/prerender_windy.py --scenario circulation --output web/assets/prerender --grid-degrees 5 --spinup-hours 120 --analysis-hours 120 --frames 48 --fps 12 --particles 2400 --level 900
+python scripts/prerender_profiles.py catalog
 ```
 
-The renderer CLI uses these same circulation defaults, so `python
-scripts/prerender_windy.py` regenerates the default browser fallback directly.
+## Dynamic playback
 
-## Run without the frontend
+Atmos20’s visual output is sampled from successive model states rather than from one frozen field:
+
+- scalar layers and particle paths share the same model timeline;
+- animated WebP frames are decoded and uploaded to WebGL textures in lockstep;
+- the bottom time scrubber can jump to an exact model frame;
+- long runs display simulated days rather than an opaque frame number;
+- browsers without the required WebGL/WebCodecs path fall back to native two-dimensional animated images.
+
+Every published bundle should pass:
 
 ```bash
-python run_headless.py --days 5 --level 850
+python scripts/validate_prerender.py \
+  web/assets/prerenders/<profile-id>/manifest.json
 ```
 
-This writes `output/atmos20_state.png` and a compressed `output/atmos20_state.npz` containing every model field.
+The validator rejects missing assets, mismatched frame counts, non-monotonic timelines, failed circulation gates, and animations whose sampled frames are visually identical.
 
-## What the Tibetan Plateau actually does here
+## Numerical and physical scope
 
-At each horizontal cell the base surface pressure is estimated from prescribed elevation and temperature. A pressure level exists only where it lies above the local ground. Near central Tibet, where the idealized plateau exceeds roughly 4–5 km, the 1000, 950, 900 ... and several additional lower pressure levels become solid terrain. Finite-volume face fluxes into those cells are set to zero, so an 850 hPa wind must route around the plateau. The lowest active layers also receive slope-dependent form drag and an upslope vertical-velocity boundary condition.
+The current model uses:
 
-The map keeps the 3000 and 4500 m terrain contours visible, and underground regions at the selected pressure level are shaded gray.
+- 20 fixed pressure levels from 1000 to 50 hPa at 50 hPa spacing;
+- a longitude–latitude grid with underground pressure levels masked by terrain;
+- SSPRK3 time integration;
+- MC-limited second-order TVD horizontal advection;
+- resolution-scaled diffusion, divergence damping, vertical mixing, and simple dry forcing;
+- ETOPO 2022 relief for the lower boundary and Natural Earth boundaries for display context.
 
-## Equations and limitations
+The global-circulation experiment is intended to show circulation mechanisms and terrain coupling. The baroclinic experiment is intended to show instability growth and front diagnosis. Neither configuration includes moist convection, cloud microphysics, radiation, data assimilation, or operational boundary conditions.
 
-The core is a deliberately simplified hydrostatic pressure-level model. The
-default three-cell setup uses SSPRK3 time stepping, TVD advection,
-Held–Suarez relaxation and local-sigma drag, terrain coupling, selective
-divergence damping, plus the declared reduced-order overturning closure. The dry baroclinic setup
-uses the same TVD family with an analytically balanced boundary and only weak
-numerical mixing. See [`docs/model.md`](docs/model.md) for the equations, front
-diagnostics, and implementation choices.
+## Repository layout
 
-It is useful for mechanism experiments and visualization. It is not suitable for weather forecasts or quantitative climate attribution.
-
-## Terrain data
-
-The packaged terrain asset is generated from the NOAA NCEI ETOPO 2022
-ice-surface elevation grid. The source 1 arc-minute field is sampled at 0.25°
-and area-aggregated into 1° and 2.5° Atmos20 assets. Normal model runs use the
-compact packaged assets and do not download data. To regenerate them:
-
-```bash
-pip install -e .[dev]
-python scripts/fetch_etopo.py --download
+```text
+src/atmos20/                  numerical model and diagnostics
+scripts/prerender_windy.py    model integration and animated media renderer
+scripts/prerender_profiles.py named profiles, parallel profile runner, catalog builder
+scripts/validate_prerender.py media and motion validator
+prerender/profiles.json       long-run and representative parameter profiles
+windy_app.py                  local HTTP server and on-demand render API
+web/                          globe interface and bundled media
+.github/workflows/            tests and manual cloud pre-render workflow
 ```
 
 ## Tests
 
 ```bash
-pip install -e .[dev]
 pytest
+python scripts/prerender_profiles.py --registry prerender/profiles.json matrix --select all
+python scripts/validate_prerender.py web/assets/prerender/manifest.json
 ```
 
-The tests verify the pressure-level grid, underground masking over Tibet,
-terrain-balanced initialization, nonzero terrain influence on low-level momentum,
-rejection of equatorial high-wavenumber strings, advection behavior,
-baroclinic initial-state balance and perturbation reproducibility, objective
-front classification, and short-term numerical stability.
+The last command validates the bundled default animation.
+
+## References and data
+
+- Held, I. M. & Suarez, M. J. (1994), *A Proposal for the Intercomparison of the Dynamical Cores of Atmospheric General Circulation Models*.
+- Jablonowski, C. & Williamson, D. L. (2006), *A Baroclinic Instability Test Case for Atmospheric Model Dynamical Cores*.
+- NOAA National Centers for Environmental Information, ETOPO 2022.
+- Natural Earth 1:110m administrative boundaries.
+
+## License
+
+MIT. See [LICENSE](LICENSE).
