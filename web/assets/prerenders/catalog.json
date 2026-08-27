@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generated": "2026-08-27T00:00:00+00:00",
+  "generated": "2026-08-27T13:37:54.110107+00:00",
   "profiles": [
     {
       "id": "circulation-default-10d",
@@ -12,16 +12,43 @@
         "zh": "与当前默认设置一致：5°、900 hPa、5 天建立期加 5 天连续分析窗。",
         "en": "Matches the current default: 5°, 900 hPa, five-day spin-up and a five-day continuous analysis window."
       },
-      "available": true,
-      "manifestUrl": "/assets/prerender/manifest.json",
-      "simulationDays": 10.0,
+      "tags": [
+        "default",
+        "circulation",
+        "equinox"
+      ],
       "settings": {
+        "region": "world",
+        "season": "equinox",
+        "flowSpeed": 1.0,
+        "trail": 0.94,
+        "tibetScale": 1.0,
+        "landHeatingScale": 1.0,
+        "oceanCurrentScale": 1.0,
+        "equatorToPoleContrastK": 60.0,
+        "surfaceDragDays": 1.0,
+        "seasonalHeatEquatorDeg": 0.0,
+        "jetStrength": 35.0,
+        "perturbationAmplitude": 1.0,
+        "hemisphere": "north",
         "scenario": "circulation",
         "resolution": 5.0,
         "level": 900,
+        "spinupDays": 5,
+        "analysisDays": 5,
         "frames": 48,
-        "fps": 12
+        "fps": 12,
+        "particles": 2400
       },
+      "simulationDays": 10.0,
+      "analysisDays": 5.0,
+      "cloud": {
+        "enabled": true,
+        "estimatedRunnerMinutes": 8
+      },
+      "available": true,
+      "manifestUrl": "/assets/prerenders/circulation-default-10d/manifest.json",
+      "generated": "2026-08-27T13:32:16.800157+00:00",
       "frames": 48,
       "fps": 12,
       "qualityGatePassed": true
@@ -36,16 +63,43 @@
         "zh": "5° 全球网格，先积分 60 天建立环流，再连续保存 30 天动态过程。",
         "en": "A 5° global run with 60 days of spin-up followed by a continuously sampled 30-day animation window."
       },
-      "available": false,
-      "manifestUrl": null,
-      "simulationDays": 90.0,
+      "tags": [
+        "long-run",
+        "circulation",
+        "equinox"
+      ],
       "settings": {
+        "region": "world",
+        "season": "equinox",
+        "flowSpeed": 1.0,
+        "trail": 0.94,
+        "tibetScale": 1.0,
+        "landHeatingScale": 1.0,
+        "oceanCurrentScale": 1.0,
+        "equatorToPoleContrastK": 60.0,
+        "surfaceDragDays": 1.0,
+        "seasonalHeatEquatorDeg": 0.0,
+        "jetStrength": 35.0,
+        "perturbationAmplitude": 1.0,
+        "hemisphere": "north",
         "scenario": "circulation",
         "resolution": 5.0,
         "level": 900,
+        "spinupDays": 60,
+        "analysisDays": 30,
         "frames": 72,
-        "fps": 12
+        "fps": 12,
+        "particles": 3200
       },
+      "simulationDays": 90.0,
+      "analysisDays": 30.0,
+      "cloud": {
+        "enabled": true,
+        "estimatedRunnerMinutes": 65
+      },
+      "available": false,
+      "manifestUrl": null,
+      "generated": null,
       "frames": 72,
       "fps": 12,
       "qualityGatePassed": null
@@ -60,16 +114,43 @@
         "zh": "5° 全球网格，30 天建立期加 30 天动态分析窗，热赤道位于 23.44°N。",
         "en": "A 5° global run with 30 days of spin-up and 30 days of playback, using a 23.44°N thermal equator."
       },
-      "available": false,
-      "manifestUrl": null,
-      "simulationDays": 60.0,
+      "tags": [
+        "long-run",
+        "circulation",
+        "summer"
+      ],
       "settings": {
+        "region": "world",
+        "season": "summer",
+        "flowSpeed": 1.0,
+        "trail": 0.94,
+        "tibetScale": 1.0,
+        "landHeatingScale": 1.0,
+        "oceanCurrentScale": 1.0,
+        "equatorToPoleContrastK": 60.0,
+        "surfaceDragDays": 1.0,
+        "seasonalHeatEquatorDeg": 23.44,
+        "jetStrength": 35.0,
+        "perturbationAmplitude": 1.0,
+        "hemisphere": "north",
         "scenario": "circulation",
         "resolution": 5.0,
         "level": 900,
+        "spinupDays": 30,
+        "analysisDays": 30,
         "frames": 72,
-        "fps": 12
+        "fps": 12,
+        "particles": 3200
       },
+      "simulationDays": 60.0,
+      "analysisDays": 30.0,
+      "cloud": {
+        "enabled": true,
+        "estimatedRunnerMinutes": 48
+      },
+      "available": false,
+      "manifestUrl": null,
+      "generated": null,
       "frames": 72,
       "fps": 12,
       "qualityGatePassed": null
@@ -84,16 +165,43 @@
         "zh": "5° 全球网格，30 天建立期加 30 天动态分析窗，热赤道位于 23.44°S。",
         "en": "A 5° global run with 30 days of spin-up and 30 days of playback, using a 23.44°S thermal equator."
       },
-      "available": false,
-      "manifestUrl": null,
-      "simulationDays": 60.0,
+      "tags": [
+        "long-run",
+        "circulation",
+        "winter"
+      ],
       "settings": {
+        "region": "world",
+        "season": "winter",
+        "flowSpeed": 1.0,
+        "trail": 0.94,
+        "tibetScale": 1.0,
+        "landHeatingScale": 1.0,
+        "oceanCurrentScale": 1.0,
+        "equatorToPoleContrastK": 60.0,
+        "surfaceDragDays": 1.0,
+        "seasonalHeatEquatorDeg": -23.44,
+        "jetStrength": 35.0,
+        "perturbationAmplitude": 1.0,
+        "hemisphere": "north",
         "scenario": "circulation",
         "resolution": 5.0,
         "level": 900,
+        "spinupDays": 30,
+        "analysisDays": 30,
         "frames": 72,
-        "fps": 12
+        "fps": 12,
+        "particles": 3200
       },
+      "simulationDays": 60.0,
+      "analysisDays": 30.0,
+      "cloud": {
+        "enabled": true,
+        "estimatedRunnerMinutes": 48
+      },
+      "available": false,
+      "manifestUrl": null,
+      "generated": null,
       "frames": 72,
       "fps": 12,
       "qualityGatePassed": null
@@ -108,16 +216,43 @@
         "zh": "2.5° 全球网格，10 天建立期加 10 天连续分析窗；用于观察更细的地形与风带结构。",
         "en": "A 2.5° global run with ten days of spin-up and ten days of continuous playback for finer terrain and wind-belt structure."
       },
-      "available": false,
-      "manifestUrl": null,
-      "simulationDays": 20.0,
+      "tags": [
+        "quality",
+        "circulation",
+        "equinox"
+      ],
       "settings": {
+        "region": "world",
+        "season": "equinox",
+        "flowSpeed": 1.0,
+        "trail": 0.94,
+        "tibetScale": 1.0,
+        "landHeatingScale": 1.0,
+        "oceanCurrentScale": 1.0,
+        "equatorToPoleContrastK": 60.0,
+        "surfaceDragDays": 1.0,
+        "seasonalHeatEquatorDeg": 0.0,
+        "jetStrength": 35.0,
+        "perturbationAmplitude": 1.0,
+        "hemisphere": "north",
         "scenario": "circulation",
         "resolution": 2.5,
         "level": 900,
+        "spinupDays": 10,
+        "analysisDays": 10,
         "frames": 72,
-        "fps": 12
+        "fps": 12,
+        "particles": 4200
       },
+      "simulationDays": 20.0,
+      "analysisDays": 10.0,
+      "cloud": {
+        "enabled": true,
+        "estimatedRunnerMinutes": 110
+      },
+      "available": false,
+      "manifestUrl": null,
+      "generated": null,
       "frames": 72,
       "fps": 12,
       "qualityGatePassed": null
@@ -132,16 +267,42 @@
         "zh": "5°、850 hPa，连续积分 10 天并诊断气旋、冷锋和暖锋的演变。",
         "en": "A ten-day 5° life cycle at 850 hPa with evolving cyclone, cold-front and warm-front diagnostics."
       },
-      "available": false,
-      "manifestUrl": null,
-      "simulationDays": 10.0,
+      "tags": [
+        "baroclinic",
+        "north"
+      ],
       "settings": {
+        "region": "world",
+        "season": "equinox",
+        "flowSpeed": 1.0,
+        "trail": 0.94,
+        "tibetScale": 1.0,
+        "landHeatingScale": 1.0,
+        "oceanCurrentScale": 1.0,
+        "equatorToPoleContrastK": 60.0,
+        "surfaceDragDays": 1.0,
+        "seasonalHeatEquatorDeg": 0.0,
+        "jetStrength": 35.0,
+        "perturbationAmplitude": 1.0,
+        "hemisphere": "north",
         "scenario": "baroclinic",
         "resolution": 5.0,
         "level": 850,
+        "spinupDays": 10,
+        "analysisDays": 0,
         "frames": 72,
-        "fps": 12
+        "fps": 12,
+        "particles": 3000
       },
+      "simulationDays": 10.0,
+      "analysisDays": 0.0,
+      "cloud": {
+        "enabled": true,
+        "estimatedRunnerMinutes": 12
+      },
+      "available": true,
+      "manifestUrl": "/assets/prerenders/baroclinic-north-10d/manifest.json",
+      "generated": "2026-08-27T13:34:22.650799+00:00",
       "frames": 72,
       "fps": 12,
       "qualityGatePassed": null
@@ -156,16 +317,42 @@
         "zh": "与北半球方案使用相同参数，在南半球连续积分 10 天。",
         "en": "The matching ten-day dry life cycle in the Southern Hemisphere."
       },
-      "available": false,
-      "manifestUrl": null,
-      "simulationDays": 10.0,
+      "tags": [
+        "baroclinic",
+        "south"
+      ],
       "settings": {
+        "region": "world",
+        "season": "equinox",
+        "flowSpeed": 1.0,
+        "trail": 0.94,
+        "tibetScale": 1.0,
+        "landHeatingScale": 1.0,
+        "oceanCurrentScale": 1.0,
+        "equatorToPoleContrastK": 60.0,
+        "surfaceDragDays": 1.0,
+        "seasonalHeatEquatorDeg": 0.0,
+        "jetStrength": 35.0,
+        "perturbationAmplitude": 1.0,
+        "hemisphere": "south",
         "scenario": "baroclinic",
         "resolution": 5.0,
         "level": 850,
+        "spinupDays": 10,
+        "analysisDays": 0,
         "frames": 72,
-        "fps": 12
+        "fps": 12,
+        "particles": 3000
       },
+      "simulationDays": 10.0,
+      "analysisDays": 0.0,
+      "cloud": {
+        "enabled": true,
+        "estimatedRunnerMinutes": 12
+      },
+      "available": false,
+      "manifestUrl": null,
+      "generated": null,
       "frames": 72,
       "fps": 12,
       "qualityGatePassed": null
