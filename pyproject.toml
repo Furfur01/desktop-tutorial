@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "atmos20"
 version = "0.1.0"
-description = "Interactive 20-level idealized boreal-summer atmospheric circulation model"
+description = "Interactive idealized 20-level atmospheric simulation with dynamic pre-rendered playback"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
@@ -31,6 +31,6 @@ where = ["src"]
 atmos20 = ["data/*.npz"]
 
 [tool.pytest.ini_options]
-pythonpath = ["src"]
+pythonpath = ["src", "."]
 testpaths = ["tests"]
 addopts = "-q"

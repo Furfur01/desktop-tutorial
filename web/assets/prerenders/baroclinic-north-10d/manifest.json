@@ -1,0 +1,869 @@
+{
+  "generated": "2026-08-27T13:34:22.650799+00:00",
+  "source": "Atmos20 dry Jablonowski-Williamson baroclinic-wave mechanism experiment; fronts objectively diagnosed from model output; Natural Earth 1:110m context",
+  "schemaVersion": 4,
+  "assetBase": "/assets/prerenders/baroclinic-north-10d/",
+  "modelGridDegrees": 5.0,
+  "width": 1280,
+  "height": 640,
+  "frames": 72,
+  "fps": 12,
+  "durationSeconds": 6.0,
+  "simulationHours": 240.0,
+  "levels": [
+    850
+  ],
+  "defaultLevel": 850,
+  "defaultLayer": "fronts",
+  "viewport": {
+    "name": "world",
+    "lon_min": 0.0,
+    "lon_max": 360.0,
+    "lat_min": -90.0,
+    "lat_max": 90.0,
+    "width": 1280,
+    "height": 640
+  },
+  "settings": {
+    "scenario": "baroclinic",
+    "resolution": 5.0,
+    "level": 850,
+    "region": "world",
+    "spinupHours": 240.0,
+    "frames": 72,
+    "fps": 12,
+    "particles": 3000,
+    "flowSpeed": 1.0,
+    "trail": 0.94,
+    "jetStrength": 35.0,
+    "perturbationAmplitude": 1.0,
+    "hemisphere": "north"
+  },
+  "experiment": {
+    "kind": "dry_baroclinic_wave",
+    "initialCondition": "Jablonowski-Williamson 2006 analytic balanced state sampled on the model pressure grid",
+    "trigger": "localized Gaussian zonal-wind perturbation only",
+    "prescribedCyclone": false,
+    "prescribedFronts": false,
+    "moistPhysics": false,
+    "orographicLift": false,
+    "verticalGrid": "19 fixed pressure levels, 950-50 hPa, 50 hPa spacing",
+    "numerics": "SSPRK3; MC-limited second-order TVD horizontal advection; weak resolution-scaled horizontal diffusion and vertical mixing",
+    "benchmarkScope": "mechanism demonstration on a truncated latitude-pressure grid; not a quantitative reference-solution reproduction",
+    "diagnosticLatitudeBandDeg": [
+      20.0,
+      62.5
+    ],
+    "frontReportingLatitudeBandDeg": [
+      20.0,
+      57.5
+    ],
+    "timelineWindScope": "850 hPa in selected undamped hemisphere band",
+    "polarBoundary": "balanced-state sponge from 62.5 to 77.5 degrees",
+    "polarCapDisplay": "zonal-mean extrapolation outside the dynamical grid",
+    "timeSampling": "quadratic ease-out toward mature lifecycle",
+    "frontClassificationLagHours": 6.0,
+    "frontDiagnosticHistoryHours": 3.0,
+    "reference": "https://doi.org/10.1256/qj.06.12"
+  },
+  "frontLegend": {
+    "cold": "#36a5ff",
+    "warm": "#f44a5b",
+    "stationary": "#f2d65c"
+  },
+  "timeline": [
+    {
+      "forecastHour": 0.0,
+      "surfacePressureMinHpa": 1000.0,
+      "surfacePressureMaxHpa": 1000.0,
+      "maxWindMps": 15.85,
+      "maxThetaGradientKPer100km": 1.762,
+      "coldFrontCells": 0,
+      "warmFrontCells": 0
+    },
+    {
+      "forecastHour": 6.733,
+      "surfacePressureMinHpa": 999.6,
+      "surfacePressureMaxHpa": 1000.28,
+      "maxWindMps": 15.54,
+      "maxThetaGradientKPer100km": 1.758,
+      "coldFrontCells": 0,
+      "warmFrontCells": 0
+    },
+    {
+      "forecastHour": 13.333,
+      "surfacePressureMinHpa": 999.81,
+      "surfacePressureMaxHpa": 1000.29,
+      "maxWindMps": 15.43,
+      "maxThetaGradientKPer100km": 1.752,
+      "coldFrontCells": 0,
+      "warmFrontCells": 0
+    },
+    {
+      "forecastHour": 19.867,
+      "surfacePressureMinHpa": 999.67,
+      "surfacePressureMaxHpa": 1000.49,
+      "maxWindMps": 15.41,
+      "maxThetaGradientKPer100km": 1.749,
+      "coldFrontCells": 0,
+      "warmFrontCells": 0
+    },
+    {
+      "forecastHour": 26.267,
+      "surfacePressureMinHpa": 999.74,
+      "surfacePressureMaxHpa": 1000.55,
+      "maxWindMps": 15.39,
+      "maxThetaGradientKPer100km": 1.744,
+      "coldFrontCells": 0,
+      "warmFrontCells": 0
+    },
+    {
+      "forecastHour": 32.6,
+      "surfacePressureMinHpa": 999.73,
+      "surfacePressureMaxHpa": 1000.58,
+      "maxWindMps": 15.32,
+      "maxThetaGradientKPer100km": 1.74,
+      "coldFrontCells": 0,
+      "warmFrontCells": 0
+    },
+    {
+      "forecastHour": 38.867,
+      "surfacePressureMinHpa": 999.7,
+      "surfacePressureMaxHpa": 1000.59,
+      "maxWindMps": 15.34,
+      "maxThetaGradientKPer100km": 1.735,
+      "coldFrontCells": 0,
+      "warmFrontCells": 0
+    },
+    {
+      "forecastHour": 45.0,
+      "surfacePressureMinHpa": 999.84,
+      "surfacePressureMaxHpa": 1000.55,
+      "maxWindMps": 15.3,
+      "maxThetaGradientKPer100km": 1.731,
+      "coldFrontCells": 0,
+      "warmFrontCells": 0
+    },
+    {
+      "forecastHour": 51.067,
+      "surfacePressureMinHpa": 999.7,
+      "surfacePressureMaxHpa": 1000.52,
+      "maxWindMps": 15.27,
+      "maxThetaGradientKPer100km": 1.728,
+      "coldFrontCells": 0,
+      "warmFrontCells": 0
+    },
+    {
+      "forecastHour": 57.0,
+      "surfacePressureMinHpa": 999.82,
+      "surfacePressureMaxHpa": 1000.62,
+      "maxWindMps": 15.28,
+      "maxThetaGradientKPer100km": 1.723,
+      "coldFrontCells": 0,
+      "warmFrontCells": 0
+    },
+    {
+      "forecastHour": 62.867,
+      "surfacePressureMinHpa": 999.7,
+      "surfacePressureMaxHpa": 1000.67,
+      "maxWindMps": 15.23,
+      "maxThetaGradientKPer100km": 1.721,
+      "coldFrontCells": 0,
+      "warmFrontCells": 0
+    },
+    {
+      "forecastHour": 68.6,
+      "surfacePressureMinHpa": 999.76,
+      "surfacePressureMaxHpa": 1000.74,
+      "maxWindMps": 15.24,
+      "maxThetaGradientKPer100km": 1.717,
+      "coldFrontCells": 0,
+      "warmFrontCells": 0
+    },
+    {
+      "forecastHour": 74.267,
+      "surfacePressureMinHpa": 999.67,
+      "surfacePressureMaxHpa": 1000.76,
+      "maxWindMps": 15.19,
+      "maxThetaGradientKPer100km": 1.714,
+      "coldFrontCells": 0,
+      "warmFrontCells": 0
+    },
+    {
+      "forecastHour": 79.867,
+      "surfacePressureMinHpa": 999.71,
+      "surfacePressureMaxHpa": 1000.84,
+      "maxWindMps": 15.2,
+      "maxThetaGradientKPer100km": 1.711,
+      "coldFrontCells": 0,
+      "warmFrontCells": 0
+    },
+    {
+      "forecastHour": 85.333,
+      "surfacePressureMinHpa": 999.64,
+      "surfacePressureMaxHpa": 1000.94,
+      "maxWindMps": 15.16,
+      "maxThetaGradientKPer100km": 1.708,
+      "coldFrontCells": 0,
+      "warmFrontCells": 0
+    },
+    {
+      "forecastHour": 90.667,
+      "surfacePressureMinHpa": 999.56,
+      "surfacePressureMaxHpa": 1001.03,
+      "maxWindMps": 15.17,
+      "maxThetaGradientKPer100km": 1.706,
+      "coldFrontCells": 0,
+      "warmFrontCells": 0
+    },
+    {
+      "forecastHour": 96.0,
+      "surfacePressureMinHpa": 999.56,
+      "surfacePressureMaxHpa": 1000.95,
+      "maxWindMps": 15.18,
+      "maxThetaGradientKPer100km": 1.703,
+      "coldFrontCells": 0,
+      "warmFrontCells": 0
+    },
+    {
+      "forecastHour": 101.2,
+      "surfacePressureMinHpa": 999.46,
+      "surfacePressureMaxHpa": 1001.07,
+      "maxWindMps": 15.17,
+      "maxThetaGradientKPer100km": 1.701,
+      "coldFrontCells": 0,
+      "warmFrontCells": 0
+    },
+    {
+      "forecastHour": 106.267,
+      "surfacePressureMinHpa": 999.45,
+      "surfacePressureMaxHpa": 1001.1,
+      "maxWindMps": 15.17,
+      "maxThetaGradientKPer100km": 1.698,
+      "coldFrontCells": 0,
+      "warmFrontCells": 0
+    },
+    {
+      "forecastHour": 111.267,
+      "surfacePressureMinHpa": 999.33,
+      "surfacePressureMaxHpa": 1001.17,
+      "maxWindMps": 15.16,
+      "maxThetaGradientKPer100km": 1.696,
+      "coldFrontCells": 0,
+      "warmFrontCells": 0
+    },
+    {
+      "forecastHour": 116.2,
+      "surfacePressureMinHpa": 999.3,
+      "surfacePressureMaxHpa": 1001.26,
+      "maxWindMps": 15.16,
+      "maxThetaGradientKPer100km": 1.694,
+      "coldFrontCells": 0,
+      "warmFrontCells": 0
+    },
+    {
+      "forecastHour": 121.0,
+      "surfacePressureMinHpa": 999.16,
+      "surfacePressureMaxHpa": 1001.34,
+      "maxWindMps": 15.17,
+      "maxThetaGradientKPer100km": 1.692,
+      "coldFrontCells": 0,
+      "warmFrontCells": 0
+    },
+    {
+      "forecastHour": 125.667,
+      "surfacePressureMinHpa": 999.1,
+      "surfacePressureMaxHpa": 1001.45,
+      "maxWindMps": 15.21,
+      "maxThetaGradientKPer100km": 1.69,
+      "coldFrontCells": 0,
+      "warmFrontCells": 0
+    },
+    {
+      "forecastHour": 130.333,
+      "surfacePressureMinHpa": 999.04,
+      "surfacePressureMaxHpa": 1001.55,
+      "maxWindMps": 15.2,
+      "maxThetaGradientKPer100km": 1.688,
+      "coldFrontCells": 0,
+      "warmFrontCells": 0
+    },
+    {
+      "forecastHour": 134.8,
+      "surfacePressureMinHpa": 998.88,
+      "surfacePressureMaxHpa": 1001.66,
+      "maxWindMps": 15.19,
+      "maxThetaGradientKPer100km": 1.686,
+      "coldFrontCells": 0,
+      "warmFrontCells": 0
+    },
+    {
+      "forecastHour": 139.267,
+      "surfacePressureMinHpa": 998.81,
+      "surfacePressureMaxHpa": 1001.84,
+      "maxWindMps": 15.21,
+      "maxThetaGradientKPer100km": 1.684,
+      "coldFrontCells": 0,
+      "warmFrontCells": 0
+    },
+    {
+      "forecastHour": 143.6,
+      "surfacePressureMinHpa": 998.67,
+      "surfacePressureMaxHpa": 1001.86,
+      "maxWindMps": 15.22,
+      "maxThetaGradientKPer100km": 1.683,
+      "coldFrontCells": 0,
+      "warmFrontCells": 0
+    },
+    {
+      "forecastHour": 147.8,
+      "surfacePressureMinHpa": 998.56,
+      "surfacePressureMaxHpa": 1002.03,
+      "maxWindMps": 15.25,
+      "maxThetaGradientKPer100km": 1.682,
+      "coldFrontCells": 0,
+      "warmFrontCells": 0
+    },
+    {
+      "forecastHour": 152.0,
+      "surfacePressureMinHpa": 998.48,
+      "surfacePressureMaxHpa": 1002.18,
+      "maxWindMps": 15.27,
+      "maxThetaGradientKPer100km": 1.688,
+      "coldFrontCells": 0,
+      "warmFrontCells": 0
+    },
+    {
+      "forecastHour": 156.0,
+      "surfacePressureMinHpa": 998.25,
+      "surfacePressureMaxHpa": 1002.24,
+      "maxWindMps": 15.28,
+      "maxThetaGradientKPer100km": 1.693,
+      "coldFrontCells": 0,
+      "warmFrontCells": 0
+    },
+    {
+      "forecastHour": 160.0,
+      "surfacePressureMinHpa": 998.09,
+      "surfacePressureMaxHpa": 1002.46,
+      "maxWindMps": 15.31,
+      "maxThetaGradientKPer100km": 1.698,
+      "coldFrontCells": 0,
+      "warmFrontCells": 0
+    },
+    {
+      "forecastHour": 163.8,
+      "surfacePressureMinHpa": 998.03,
+      "surfacePressureMaxHpa": 1002.62,
+      "maxWindMps": 15.34,
+      "maxThetaGradientKPer100km": 1.705,
+      "coldFrontCells": 0,
+      "warmFrontCells": 0
+    },
+    {
+      "forecastHour": 167.6,
+      "surfacePressureMinHpa": 997.77,
+      "surfacePressureMaxHpa": 1002.7,
+      "maxWindMps": 15.34,
+      "maxThetaGradientKPer100km": 1.709,
+      "coldFrontCells": 0,
+      "warmFrontCells": 0
+    },
+    {
+      "forecastHour": 171.267,
+      "surfacePressureMinHpa": 997.62,
+      "surfacePressureMaxHpa": 1002.97,
+      "maxWindMps": 15.4,
+      "maxThetaGradientKPer100km": 1.716,
+      "coldFrontCells": 0,
+      "warmFrontCells": 0
+    },
+    {
+      "forecastHour": 174.8,
+      "surfacePressureMinHpa": 997.46,
+      "surfacePressureMaxHpa": 1003.08,
+      "maxWindMps": 15.4,
+      "maxThetaGradientKPer100km": 1.723,
+      "coldFrontCells": 0,
+      "warmFrontCells": 0
+    },
+    {
+      "forecastHour": 178.267,
+      "surfacePressureMinHpa": 997.23,
+      "surfacePressureMaxHpa": 1003.26,
+      "maxWindMps": 15.47,
+      "maxThetaGradientKPer100km": 1.728,
+      "coldFrontCells": 0,
+      "warmFrontCells": 0
+    },
+    {
+      "forecastHour": 181.667,
+      "surfacePressureMinHpa": 997.14,
+      "surfacePressureMaxHpa": 1003.43,
+      "maxWindMps": 15.47,
+      "maxThetaGradientKPer100km": 1.735,
+      "coldFrontCells": 0,
+      "warmFrontCells": 0
+    },
+    {
+      "forecastHour": 184.933,
+      "surfacePressureMinHpa": 996.86,
+      "surfacePressureMaxHpa": 1003.68,
+      "maxWindMps": 15.52,
+      "maxThetaGradientKPer100km": 1.74,
+      "coldFrontCells": 0,
+      "warmFrontCells": 0
+    },
+    {
+      "forecastHour": 188.133,
+      "surfacePressureMinHpa": 996.75,
+      "surfacePressureMaxHpa": 1003.83,
+      "maxWindMps": 15.56,
+      "maxThetaGradientKPer100km": 1.747,
+      "coldFrontCells": 0,
+      "warmFrontCells": 0
+    },
+    {
+      "forecastHour": 191.267,
+      "surfacePressureMinHpa": 996.42,
+      "surfacePressureMaxHpa": 1004.01,
+      "maxWindMps": 15.6,
+      "maxThetaGradientKPer100km": 1.752,
+      "coldFrontCells": 0,
+      "warmFrontCells": 0
+    },
+    {
+      "forecastHour": 194.267,
+      "surfacePressureMinHpa": 996.34,
+      "surfacePressureMaxHpa": 1004.21,
+      "maxWindMps": 15.64,
+      "maxThetaGradientKPer100km": 1.759,
+      "coldFrontCells": 0,
+      "warmFrontCells": 0
+    },
+    {
+      "forecastHour": 197.133,
+      "surfacePressureMinHpa": 996.01,
+      "surfacePressureMaxHpa": 1004.42,
+      "maxWindMps": 15.67,
+      "maxThetaGradientKPer100km": 1.763,
+      "coldFrontCells": 0,
+      "warmFrontCells": 0
+    },
+    {
+      "forecastHour": 199.933,
+      "surfacePressureMinHpa": 995.87,
+      "surfacePressureMaxHpa": 1004.57,
+      "maxWindMps": 15.7,
+      "maxThetaGradientKPer100km": 1.769,
+      "coldFrontCells": 0,
+      "warmFrontCells": 0
+    },
+    {
+      "forecastHour": 202.667,
+      "surfacePressureMinHpa": 995.5,
+      "surfacePressureMaxHpa": 1004.86,
+      "maxWindMps": 15.75,
+      "maxThetaGradientKPer100km": 1.774,
+      "coldFrontCells": 0,
+      "warmFrontCells": 0
+    },
+    {
+      "forecastHour": 205.267,
+      "surfacePressureMinHpa": 995.45,
+      "surfacePressureMaxHpa": 1004.94,
+      "maxWindMps": 15.79,
+      "maxThetaGradientKPer100km": 1.779,
+      "coldFrontCells": 0,
+      "warmFrontCells": 0
+    },
+    {
+      "forecastHour": 207.8,
+      "surfacePressureMinHpa": 995.03,
+      "surfacePressureMaxHpa": 1005.28,
+      "maxWindMps": 15.86,
+      "maxThetaGradientKPer100km": 1.784,
+      "coldFrontCells": 0,
+      "warmFrontCells": 0
+    },
+    {
+      "forecastHour": 210.267,
+      "surfacePressureMinHpa": 994.88,
+      "surfacePressureMaxHpa": 1005.44,
+      "maxWindMps": 15.85,
+      "maxThetaGradientKPer100km": 1.789,
+      "coldFrontCells": 0,
+      "warmFrontCells": 0
+    },
+    {
+      "forecastHour": 212.6,
+      "surfacePressureMinHpa": 994.55,
+      "surfacePressureMaxHpa": 1005.61,
+      "maxWindMps": 15.93,
+      "maxThetaGradientKPer100km": 1.795,
+      "coldFrontCells": 0,
+      "warmFrontCells": 0
+    },
+    {
+      "forecastHour": 214.8,
+      "surfacePressureMinHpa": 994.27,
+      "surfacePressureMaxHpa": 1005.91,
+      "maxWindMps": 15.97,
+      "maxThetaGradientKPer100km": 1.798,
+      "coldFrontCells": 0,
+      "warmFrontCells": 0
+    },
+    {
+      "forecastHour": 216.933,
+      "surfacePressureMinHpa": 994.2,
+      "surfacePressureMaxHpa": 1005.99,
+      "maxWindMps": 15.98,
+      "maxThetaGradientKPer100km": 1.803,
+      "coldFrontCells": 0,
+      "warmFrontCells": 1
+    },
+    {
+      "forecastHour": 219.0,
+      "surfacePressureMinHpa": 993.76,
+      "surfacePressureMaxHpa": 1006.26,
+      "maxWindMps": 16.08,
+      "maxThetaGradientKPer100km": 1.811,
+      "coldFrontCells": 1,
+      "warmFrontCells": 1
+    },
+    {
+      "forecastHour": 220.933,
+      "surfacePressureMinHpa": 993.54,
+      "surfacePressureMaxHpa": 1006.52,
+      "maxWindMps": 16.12,
+      "maxThetaGradientKPer100km": 1.818,
+      "coldFrontCells": 3,
+      "warmFrontCells": 2
+    },
+    {
+      "forecastHour": 222.8,
+      "surfacePressureMinHpa": 993.43,
+      "surfacePressureMaxHpa": 1006.56,
+      "maxWindMps": 16.14,
+      "maxThetaGradientKPer100km": 1.827,
+      "coldFrontCells": 4,
+      "warmFrontCells": 3
+    },
+    {
+      "forecastHour": 224.6,
+      "surfacePressureMinHpa": 993.03,
+      "surfacePressureMaxHpa": 1006.75,
+      "maxWindMps": 16.23,
+      "maxThetaGradientKPer100km": 1.835,
+      "coldFrontCells": 4,
+      "warmFrontCells": 3
+    },
+    {
+      "forecastHour": 226.267,
+      "surfacePressureMinHpa": 992.79,
+      "surfacePressureMaxHpa": 1007.11,
+      "maxWindMps": 16.29,
+      "maxThetaGradientKPer100km": 1.846,
+      "coldFrontCells": 6,
+      "warmFrontCells": 1
+    },
+    {
+      "forecastHour": 227.8,
+      "surfacePressureMinHpa": 992.72,
+      "surfacePressureMaxHpa": 1007.21,
+      "maxWindMps": 16.3,
+      "maxThetaGradientKPer100km": 1.861,
+      "coldFrontCells": 4,
+      "warmFrontCells": 2
+    },
+    {
+      "forecastHour": 229.267,
+      "surfacePressureMinHpa": 992.42,
+      "surfacePressureMaxHpa": 1007.3,
+      "maxWindMps": 16.35,
+      "maxThetaGradientKPer100km": 1.874,
+      "coldFrontCells": 4,
+      "warmFrontCells": 2
+    },
+    {
+      "forecastHour": 230.667,
+      "surfacePressureMinHpa": 992.1,
+      "surfacePressureMaxHpa": 1007.42,
+      "maxWindMps": 16.43,
+      "maxThetaGradientKPer100km": 1.885,
+      "coldFrontCells": 4,
+      "warmFrontCells": 1
+    },
+    {
+      "forecastHour": 231.933,
+      "surfacePressureMinHpa": 991.94,
+      "surfacePressureMaxHpa": 1007.72,
+      "maxWindMps": 16.47,
+      "maxThetaGradientKPer100km": 1.894,
+      "coldFrontCells": 4,
+      "warmFrontCells": 1
+    },
+    {
+      "forecastHour": 233.133,
+      "surfacePressureMinHpa": 991.85,
+      "surfacePressureMaxHpa": 1007.88,
+      "maxWindMps": 16.5,
+      "maxThetaGradientKPer100km": 1.907,
+      "coldFrontCells": 6,
+      "warmFrontCells": 2
+    },
+    {
+      "forecastHour": 234.267,
+      "surfacePressureMinHpa": 991.79,
+      "surfacePressureMaxHpa": 1007.91,
+      "maxWindMps": 16.51,
+      "maxThetaGradientKPer100km": 1.918,
+      "coldFrontCells": 6,
+      "warmFrontCells": 1
+    },
+    {
+      "forecastHour": 235.267,
+      "surfacePressureMinHpa": 991.46,
+      "surfacePressureMaxHpa": 1007.99,
+      "maxWindMps": 16.57,
+      "maxThetaGradientKPer100km": 1.927,
+      "coldFrontCells": 5,
+      "warmFrontCells": 1
+    },
+    {
+      "forecastHour": 236.133,
+      "surfacePressureMinHpa": 991.22,
+      "surfacePressureMaxHpa": 1008.1,
+      "maxWindMps": 16.62,
+      "maxThetaGradientKPer100km": 1.935,
+      "coldFrontCells": 6,
+      "warmFrontCells": 1
+    },
+    {
+      "forecastHour": 236.933,
+      "surfacePressureMinHpa": 991.05,
+      "surfacePressureMaxHpa": 1008.22,
+      "maxWindMps": 16.65,
+      "maxThetaGradientKPer100km": 1.941,
+      "coldFrontCells": 6,
+      "warmFrontCells": 1
+    },
+    {
+      "forecastHour": 237.667,
+      "surfacePressureMinHpa": 990.95,
+      "surfacePressureMaxHpa": 1008.39,
+      "maxWindMps": 16.67,
+      "maxThetaGradientKPer100km": 1.947,
+      "coldFrontCells": 5,
+      "warmFrontCells": 2
+    },
+    {
+      "forecastHour": 238.267,
+      "surfacePressureMinHpa": 990.91,
+      "surfacePressureMaxHpa": 1008.49,
+      "maxWindMps": 16.68,
+      "maxThetaGradientKPer100km": 1.952,
+      "coldFrontCells": 8,
+      "warmFrontCells": 1
+    },
+    {
+      "forecastHour": 238.8,
+      "surfacePressureMinHpa": 990.88,
+      "surfacePressureMaxHpa": 1008.56,
+      "maxWindMps": 16.69,
+      "maxThetaGradientKPer100km": 1.959,
+      "coldFrontCells": 7,
+      "warmFrontCells": 1
+    },
+    {
+      "forecastHour": 239.267,
+      "surfacePressureMinHpa": 990.88,
+      "surfacePressureMaxHpa": 1008.61,
+      "maxWindMps": 16.7,
+      "maxThetaGradientKPer100km": 1.965,
+      "coldFrontCells": 7,
+      "warmFrontCells": 1
+    },
+    {
+      "forecastHour": 239.6,
+      "surfacePressureMinHpa": 990.88,
+      "surfacePressureMaxHpa": 1008.64,
+      "maxWindMps": 16.7,
+      "maxThetaGradientKPer100km": 1.968,
+      "coldFrontCells": 7,
+      "warmFrontCells": 1
+    },
+    {
+      "forecastHour": 239.8,
+      "surfacePressureMinHpa": 990.89,
+      "surfacePressureMaxHpa": 1008.66,
+      "maxWindMps": 16.7,
+      "maxThetaGradientKPer100km": 1.97,
+      "coldFrontCells": 6,
+      "warmFrontCells": 1
+    },
+    {
+      "forecastHour": 239.933,
+      "surfacePressureMinHpa": 990.86,
+      "surfacePressureMaxHpa": 1008.67,
+      "maxWindMps": 16.71,
+      "maxThetaGradientKPer100km": 1.972,
+      "coldFrontCells": 6,
+      "warmFrontCells": 1
+    },
+    {
+      "forecastHour": 240.0,
+      "surfacePressureMinHpa": 990.83,
+      "surfacePressureMaxHpa": 1008.68,
+      "maxWindMps": 16.71,
+      "maxThetaGradientKPer100km": 1.972,
+      "coldFrontCells": 6,
+      "warmFrontCells": 1
+    }
+  ],
+  "layers": {
+    "fronts": {
+      "label": "锋面",
+      "english": "OBJECTIVE FRONTS",
+      "unit": "K",
+      "animated": true,
+      "assets": {
+        "850": "fronts_850.webp"
+      },
+      "ranges": {
+        "850": [
+          236.22937061753495,
+          315.99028759084007
+        ]
+      }
+    },
+    "wind": {
+      "label": "风速",
+      "english": "WIND",
+      "unit": "m/s",
+      "animated": true,
+      "assets": {
+        "850": "wind_850.webp"
+      },
+      "ranges": {
+        "850": [
+          0.0,
+          45.0
+        ]
+      }
+    },
+    "temperature": {
+      "label": "温度",
+      "english": "TEMPERATURE",
+      "unit": "°C",
+      "animated": true,
+      "assets": {
+        "850": "temperature_850.webp"
+      },
+      "ranges": {
+        "850": [
+          -47.64596677005663,
+          28.493627661322034
+        ]
+      }
+    },
+    "pressure": {
+      "label": "气压",
+      "english": "SURFACE PRESSURE ANOMALY",
+      "unit": "hPa",
+      "animated": true,
+      "assets": {
+        "850": "pressure_850.webp"
+      },
+      "ranges": {
+        "850": [
+          -12.0,
+          12.0
+        ]
+      }
+    },
+    "omega": {
+      "label": "垂直运动",
+      "english": "OMEGA",
+      "unit": "Pa/s",
+      "animated": true,
+      "assets": {
+        "850": "omega_850.webp"
+      },
+      "ranges": {
+        "850": [
+          -0.05,
+          0.05
+        ]
+      }
+    },
+    "geopotential": {
+      "label": "位势高度",
+      "english": "GEOPOTENTIAL",
+      "unit": "m",
+      "animated": true,
+      "assets": {
+        "850": "geopotential_850.webp"
+      },
+      "ranges": {
+        "850": [
+          770.9275648386662,
+          1562.955336315945
+        ]
+      }
+    }
+  },
+  "particles": {
+    "850": "particles_850.webp"
+  },
+  "precomputed": true,
+  "profile": {
+    "id": "baroclinic-north-10d",
+    "label": {
+      "zh": "北半球干斜压波 · 10 天",
+      "en": "Northern dry baroclinic wave · 10 days"
+    },
+    "description": {
+      "zh": "5°、850 hPa，连续积分 10 天并诊断气旋、冷锋和暖锋的演变。",
+      "en": "A ten-day 5° life cycle at 850 hPa with evolving cyclone, cold-front and warm-front diagnostics."
+    },
+    "tags": [
+      "baroclinic",
+      "north"
+    ],
+    "settings": {
+      "region": "world",
+      "season": "equinox",
+      "flowSpeed": 1.0,
+      "trail": 0.94,
+      "tibetScale": 1.0,
+      "landHeatingScale": 1.0,
+      "oceanCurrentScale": 1.0,
+      "equatorToPoleContrastK": 60.0,
+      "surfaceDragDays": 1.0,
+      "seasonalHeatEquatorDeg": 0.0,
+      "jetStrength": 35.0,
+      "perturbationAmplitude": 1.0,
+      "hemisphere": "north",
+      "scenario": "baroclinic",
+      "resolution": 5.0,
+      "level": 850,
+      "spinupDays": 10,
+      "analysisDays": 0,
+      "frames": 72,
+      "fps": 12,
+      "particles": 3000
+    },
+    "simulationDays": 10.0,
+    "analysisDays": 0.0,
+    "cloud": {
+      "enabled": true,
+      "estimatedRunnerMinutes": 12
+    }
+  },
+  "renderExecution": {
+    "cpuCount": 4,
+    "python": "3.12.14",
+    "generatedBy": "scripts/prerender_profiles.py"
+  }
+}
